@@ -256,7 +256,7 @@ var request, declare;
 
       if (is_on_lib) {
         promise_list[i] = RSVP.resolve({
-          "module": is_on_lib.callback(),
+          "module":is_on_lib(),
           "name": mod
         });
       } else {
