@@ -354,6 +354,10 @@ var request, declare;
     */
   declare = function (name, dependency_list, callback) {
 
+    if (dependency_list.length === 0) {
+      dependency_list = undefined;
+    }
+
     // NOTE: we only like name based modules!
     if (name) {
       app.module_dependency_dict[name] = dependency_list;
