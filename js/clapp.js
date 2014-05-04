@@ -317,12 +317,14 @@ var request, declare;
         return requestBundle(el).then(function (bundle_response) {
           var i, j, mod_len, len, mod, loaded_mod;
 
-          // try to find matches for return_array. (keep order!!!)
+          // try to find matches for return_array - keep order(!) by
+          // looping over requested modules and passing back undefined
+          // for external modules
           for (i = 0, mod_len = module_list.length; i < mod_len; i += 1) {
             mod = module_list[i];
             for (j = 0, len = bundle_response.length; j < len; j += 1) {
               loaded_mod = bundle_response[j];
-              if (mod === loaded_mod.name && loaded_mod.module) {
+              if (mod === loaded_mod.name) {
                 return_array.push(loaded_mod.module);
               }
             }
