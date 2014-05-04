@@ -1,0 +1,130 @@
+[
+  {
+    "generate": "module",
+    "type": "paths",
+    "property_dict": {
+      "set_on": "module_path_dict"
+    },
+    "scheme": [{
+      "uri": "ext/libs/jio/URI.js",
+      "rsvp": "ext/libs/jio/rsvp-custom.js",
+      "sha256": "ext/libs/jio/sha256.amd.js",
+      "jio": "ext/libs/jio/jio.js",
+      "localstorage": "ext/libs/jio/localstorage.js"
+    }]
+  },
+  {
+    "generate": "module",
+    "type": "deps",
+    "property_dict": {
+      "set_on": "module_dependency_dict",
+    },
+    "scheme": [{
+      "jio": ["uri", "sha256", "rsvp"],
+      "localstorage": ["jio"]
+    }]
+  },
+  {
+    "generate": "module",
+    "type": "jIO",
+    "property_dict": {
+      "detect": ["blobconstructor", "filereader"],
+      "set_on": "storage_dict",
+      "initializer": "createJIO",
+      "storage": true,
+      "allow_sample_data": true,
+      "force_field_definitions": true
+    },
+    "dependencies": ["localstorage"],
+    "scheme": [{
+      "property_dict": {
+        "type": "local",
+        "username": "slapos",
+        "application_name": "settings"}
+      }, {
+      "property_dict": {
+        "type": "local",
+        "username": "slapos",
+        "application_name": "items"}
+      }],
+      "children": []
+  },
+  {
+    "generate": "module",
+    "type": "i18n",
+    "property_dict": {
+      "set_on": "lang_dict",
+      "initializer": "init",
+      "handler": "language",
+      "use_browser_language": false
+    },
+    "scheme": [{
+      "property_dict": {
+        "lng": "fr-FR",
+        "load": "current",
+        "fallbackLng": false,
+        "resGetPath": "lang/__lng__/__ns__.json",
+        "ns": "dict",
+        "getAsync": false
+      }
+    }],
+    "children": []
+  },
+  {
+    "type": "status_dict",
+    "property_dict": {
+      "loader": true,
+      "loader_theme": "dark"
+    }
+  },
+  {
+    "generate": "widget",
+    "type": "controlbar",
+    "property_dict": {
+      "wrap": "fragment",
+      "target": "document"
+    },
+    "children": [
+      {
+        "generate": "widget",
+        "type": "header",
+        "property_dict": {
+          "theme": "light",
+          "add_content": 0,
+          "title_i18n": "global_dict.home"
+        },
+        "children": [
+          {
+            "generate": "widget",
+            "type": "controlgroup",
+            "property_dict": {
+              "direction": "horizontal"
+            },
+            "children": [
+              {
+                "type":"select",
+                "direct": {
+                  "id": "switch_language",
+                  "className":"action responsive translate"
+                },
+                "attributes": {
+                  "data-action":"translate",
+                  "data-icon":"flag-fr"
+                },
+                "logic": {
+                  "wrapper_class_list":"flag",
+                  "options": [
+                    {"value": "en-EN", "text_i18n":"global_dict.english", "selected": true},
+                    {"value": "fr-FR", "text_i18n":"global_dict.french"}
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
+
+
