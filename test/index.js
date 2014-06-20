@@ -2,8 +2,8 @@
 
 "use strict";
 
-var toLint = [
-  "../lib/clappjs/clapp.js"
+var toJSLint = [
+  "../lib/clapp/clapp.js"
 ];
 
 /*
@@ -26,28 +26,5 @@ var fileList = [
   "tests/MYLIB.js"
 ];
 
-var toLint = [
-  "src/hasOwnProperty.js",
-  "src/toString.js",
-  "src/isObject.js"
-    "../js/factory.js",
-  "../js/header.js",
-  "../js/import.js",
-  "../js/index.js",
-  "../js/navigation.js",
-  "../js/panel.js",
-  "../js/storage.js",
-  "../js/translation.js",
-  "../js/utilities.js",
-  "../js/viewer.js"
-];
-
-var toConcat = [
-  "license.txt",
-  "src/wrapper/header.js",
-  "src/hasOwnProperty.js",
-  "src/toString.js",
-  "src/isObject.js",
-  "src/wrapper/footer.js"
-];
+var toConcat = [];
 */
