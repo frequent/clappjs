@@ -1,1 +1,9 @@
+#vi
+*.swp
 *~
+*.
+
+#dolphin
+.directory
+
+node_modules/*

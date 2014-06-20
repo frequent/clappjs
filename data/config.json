@@ -1,41 +1,28 @@
 [
   {
     "generate": "module",
-    "type": "paths",
+    "type": "storage",
     "property_dict": {
-      "set_on": "module_path_dict"
-    },
-    "scheme": [{
-      "uri": "ext/libs/jio/URI.js",
-      "rsvp": "ext/libs/jio/rsvp-custom.js",
-      "sha256": "ext/libs/jio/sha256.amd.js",
-      "jio": "ext/libs/jio/jio.js",
-      "localstorage": "ext/libs/jio/localstorage.js"
-    }]
-  },
-  {
-    "generate": "module",
-    "type": "deps",
-    "property_dict": {
-      "set_on": "module_dependency_dict",
-    },
-    "scheme": [{
-      "jio": ["uri", "sha256", "rsvp"],
-      "localstorage": ["jio"]
-    }]
-  },
-  {
-    "generate": "module",
-    "type": "jIO",
-    "property_dict": {
+      "request_uri": "js/storage.js",
       "detect": ["blobconstructor", "filereader"],
-      "set_on": "storage_dict",
       "initializer": "createJIO",
-      "storage": true,
       "allow_sample_data": true,
       "force_field_definitions": true
     },
-    "dependencies": ["localstorage"],
+    "dependency_list": [{
+      "name": "jio",
+      "src": "lib/jio/jio.js",
+      "dependency_list": [{
+        "name": "rsvp",
+        "src": "lib/rsvp/rsvp-custom.js"
+      }, {
+        "name": "sha256",
+        "src": "lib/jio/sha256.amd.js"
+      }]
+    }, {
+      "name": "localstorage",
+      "src": "lib/jio/localstorage.js"
+    }],
     "scheme": [{
       "property_dict": {
         "type": "local",
@@ -46,85 +33,30 @@
         "type": "local",
         "username": "slapos",
         "application_name": "items"}
-      }],
-      "children": []
+      }
+    ],
+    "children": []
   },
   {
     "generate": "module",
-    "type": "i18n",
+    "type": "translation",
     "property_dict": {
-      "set_on": "lang_dict",
       "initializer": "init",
-      "handler": "language",
       "use_browser_language": false
     },
+    "dependency_list": [{
+      "name": "i18n",
+      "src": "lib/i18next/i18next.js"
+    }],
     "scheme": [{
       "property_dict": {
-        "lng": "fr-FR",
+        "lng": "en-EN",
         "load": "current",
         "fallbackLng": false,
         "resGetPath": "lang/__lng__/__ns__.json",
         "ns": "dict",
         "getAsync": false
       }
-    }],
-    "children": []
-  },
-  {
-    "type": "status_dict",
-    "property_dict": {
-      "loader": true,
-      "loader_theme": "dark"
-    }
-  },
-  {
-    "generate": "widget",
-    "type": "controlbar",
-    "property_dict": {
-      "wrap": "fragment",
-      "target": "document"
-    },
-    "children": [
-      {
-        "generate": "widget",
-        "type": "header",
-        "property_dict": {
-          "theme": "light",
-          "add_content": 0,
-          "title_i18n": "global_dict.home"
-        },
-        "children": [
-          {
-            "generate": "widget",
-            "type": "controlgroup",
-            "property_dict": {
-              "direction": "horizontal"
-            },
-            "children": [
-              {
-                "type":"select",
-                "direct": {
-                  "id": "switch_language",
-                  "className":"action responsive translate"
-                },
-                "attributes": {
-                  "data-action":"translate",
-                  "data-icon":"flag-fr"
-                },
-                "logic": {
-                  "wrapper_class_list":"flag",
-                  "options": [
-                    {"value": "en-EN", "text_i18n":"global_dict.english", "selected": true},
-                    {"value": "fr-FR", "text_i18n":"global_dict.french"}
-                  ]
-                }
-              }
-            ]
-          }
-        ]
-      }
-    ]
+    }]
   }
 ]
-
-
