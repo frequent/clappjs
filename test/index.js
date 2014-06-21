@@ -6,6 +6,9 @@ var toJSLint = [
   "../lib/clapp/clapp.js"
 ];
 
+var toCSSLint = [
+  "../css/test.css"
+];
 /*
 var fileList = [
   // root
