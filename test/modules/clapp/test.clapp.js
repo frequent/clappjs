@@ -60,11 +60,11 @@
     }
   }
 
-  module("CLAPP");
+  module("module loader");
 
   contentLoaded(window, function () {
 
-    asyncTest( "Single plain module load", function () {
+    asyncTest( "Plain module load", function () {
       request(["foo"])
         .then(function (module_list) {
 
@@ -78,7 +78,18 @@
         .fail(console.log);
     });
 
-    asyncTest( "Single module load with missing dependency", function () {
+    asyncTest( "Plain module load, reload from memory", function () {
+      request(["foo"])
+        .then(function (module_list) {
+
+          ok(module_list !== undefined, "List of modules returned.");
+          start();
+        })
+        .fail(console.log)
+
+    });
+
+    asyncTest( "Plain module load, missing dependency", function () {
       request(["bar"])
         .then(function (module_list) {
 

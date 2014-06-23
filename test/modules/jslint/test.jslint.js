@@ -3,7 +3,7 @@
 (function () {
   "use strict";
 
-  module("JSLINT");
+  module("jslint");
 
   /**
    * JSLint a list of files

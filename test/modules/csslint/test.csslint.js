@@ -3,7 +3,7 @@
 (function () {
   "use strict";
 
-  module("CSSLINT");
+  module("csslint");
 
   /**
    * CSS Lint a list of files
