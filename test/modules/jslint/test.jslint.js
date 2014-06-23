@@ -5,8 +5,13 @@
 
   module("JSLINT");
 
-  // XXX docstring
-  function jslint(url) {
+  /**
+   * JSLint a list of files
+   * Thx Tristan - setup jslint in Qunit - http://bit.ly/1qDWNVy
+   * @method  jsLint
+   * @param   {String} url  Url of file to lint
+   */
+  function jsLint(url) {
     test(url, 0, function () {
       stop();
       var xhr = new XMLHttpRequest();
@@ -29,6 +34,6 @@
     });
   }
 
-  toJSLint.forEach(jslint);
+  toJSLint.forEach(jsLint);
 
 }());

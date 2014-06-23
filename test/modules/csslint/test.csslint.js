@@ -1,13 +1,17 @@
 /*jslint indent: 2 */
 /*global module, test, ok, stop, start, XMLHttpRequest, JSLINT, toLint */
-
 (function () {
   "use strict";
 
   module("CSSLINT");
 
-// XXX docstring
-  function csslint(url) {
+  /**
+   * CSS Lint a list of files
+   * Thx Tristan - setup jslint in Qunit - http://bit.ly/1qDWNVy
+   * @method  cssLint
+   * @param   {String} url  Url of file to lint
+   */
+  function cssLint(url) {
     test(url, 0, function () {
       stop();
       var xhr = new XMLHttpRequest();
@@ -36,6 +40,6 @@
     });
   }
 
-  toCSSLint.forEach(csslint);
+  toCSSLint.forEach(cssLint);
 
 }());
