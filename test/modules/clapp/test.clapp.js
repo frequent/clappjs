@@ -81,8 +81,10 @@
     asyncTest( "Plain module load, reload from memory", function () {
       request(["foo"])
         .then(function (module_list) {
+          var foo = document.querySelectorAll("script[src='js/foo.js']");
 
           ok(module_list !== undefined, "List of modules returned.");
+          ok(foo.length === 1, "Subsequent requests receive module from memory.");
           start();
         })
         .fail(console.log)
@@ -98,6 +100,42 @@
           ok(module_list[0].test_value, "Module property accessible.");
           ok(module_list[0].sub_module !== undefined, "Dependency returned.");
           ok(module_list[0].sub_module.test_value, "Dependency accessible.");
+
+          start();
+        })
+        .fail(console.log);
+    });
+
+    asyncTest( "Multiple dependencies, no sub dependencies", function () {
+      request(["bum", "pum", "wum"])
+        .then(function (module_list) {
+
+          ok(module_list !== undefined, "List of modules returned.");
+          ok(module_list.length === 3, "List of modules contains three modules.");
+          ok(module_list[0].test_value, "Module property 1 accessible.");
+          ok(module_list[1].test_value, "Module property 2 accessible.");
+          ok(module_list[2].test_value, "Module property 3 accessible.");
+
+          start();
+        })
+        .fail(console.log);
+    });
+
+    asyncTest( "Multiple dependencies, with sub dependencies, from memory", function () {
+      request(["bar", "pum", "wur"])
+        .then(function (module_list) {
+           var baz = document.querySelectorAll("script[src='js/baz.js']");
+
+          ok(module_list !== undefined, "List of modules returned.");
+          ok(module_list.length === 3, "List of modules contains three modules.");
+          ok(module_list[0].test_value, "Module property 1 accessible.");
+          ok(module_list[1].test_value, "Module property 2 accessible.");
+          ok(module_list[2].test_value, "Module property 3 accessible.");
+          ok(module_list[0].sub_module !== undefined, "Dependency returned.");
+          ok(module_list[0].sub_module.test_value, "Dependency accessible.");
+          ok(module_list[2].sub_module !== undefined, "Dependency returned.");
+          ok(module_list[2].sub_module.test_value, "Dependency accessible.");
+          ok(baz.length === 1, "Subsequent requests receive module(s) from memory.");
 
           start();
         })
