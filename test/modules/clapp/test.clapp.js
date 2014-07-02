@@ -64,13 +64,13 @@
 
   contentLoaded(window, function () {
 
-    asyncTest( "Plain module load", function () {
+    asyncTest("Plain module load", function () {
       request(["foo"])
         .then(function (module_list) {
 
           ok(window.request && window.declare, "clappjs initiliazed");
           ok(module_list !== undefined, "List of modules returned.");
-          ok(module_list.length === 1, "List of modules contains one module.");
+          ok(module_list.length === 1, "Module list contains one module.");
           ok(module_list[0].test_value, "Module property accessible.");
 
           start();
@@ -78,20 +78,20 @@
         .fail(console.log);
     });
 
-    asyncTest( "Plain module load, reload from memory", function () {
+    asyncTest("Plain module load, reload from memory", function () {
       request(["foo"])
         .then(function (module_list) {
           var foo = document.querySelectorAll("script[src='js/foo.js']");
 
           ok(module_list !== undefined, "List of modules returned.");
-          ok(foo.length === 1, "Subsequent requests receive module from memory.");
+          ok(foo.length === 1, "Subsequent request gets module from memory.");
           start();
         })
         .fail(console.log)
 
     });
 
-    asyncTest( "Plain module load, missing dependency", function () {
+    asyncTest("Plain module load, missing dependency", function () {
       request(["bar"])
         .then(function (module_list) {
 
@@ -106,12 +106,12 @@
         .fail(console.log);
     });
 
-    asyncTest( "Multiple dependencies, no sub dependencies", function () {
+    asyncTest("Multiple dependencies, no sub dependencies", function () {
       request(["bum", "pum", "wum"])
         .then(function (module_list) {
 
           ok(module_list !== undefined, "List of modules returned.");
-          ok(module_list.length === 3, "List of modules contains three modules.");
+          ok(module_list.length === 3, "Module list contains three modules.");
           ok(module_list[0].test_value, "Module property 1 accessible.");
           ok(module_list[1].test_value, "Module property 2 accessible.");
           ok(module_list[2].test_value, "Module property 3 accessible.");
@@ -121,13 +121,13 @@
         .fail(console.log);
     });
 
-    asyncTest( "Multiple dependencies, with sub dependencies, from memory", function () {
+    asyncTest("Multiple and sub dependencies, from memory", function () {
       request(["bar", "pum", "wur"])
         .then(function (module_list) {
           var baz = document.querySelectorAll("script[src='js/baz.js']");
 
           ok(module_list !== undefined, "List of modules returned.");
-          ok(module_list.length === 3, "List of modules contains three modules.");
+          ok(module_list.length === 3, "Module list contains three modules.");
           ok(module_list[0].test_value, "Module property 1 accessible.");
           ok(module_list[1].test_value, "Module property 2 accessible.");
           ok(module_list[2].test_value, "Module property 3 accessible.");
@@ -135,14 +135,14 @@
           ok(module_list[0].sub_module.test_value, "Dependency accessible.");
           ok(module_list[2].sub_module !== undefined, "Dependency returned.");
           ok(module_list[2].sub_module.test_value, "Dependency accessible.");
-          ok(baz.length === 1, "Subsequent requests receive module(s) from memory.");
+          ok(baz.length === 1, "Subsequent requests served from memory.");
 
           start();
         })
         .fail(console.log);
     });
 
-    asyncTest( "Multiple dependencies, inline & external, sub dependencies, from memory", function () {
+    asyncTest("Multiple dependencies, inline & external, sub dependencies, from memory", function () {
       declare("abc", ["baz"], function (module_list) {
         return {
           "name": "abc",
@@ -164,18 +164,49 @@
           var baz = document.querySelectorAll("script[src='js/baz.js']");
 
           ok(module_list !== undefined, "List of modules returned.");
-          ok(module_list.length === 2, "List of modules contains two modules.");
+          ok(module_list.length === 2, "Module list contains two modules.");
           ok(module_list[0].test_value, "Module property 1 accessible.");
           ok(module_list[1].test_value, "Module property 2 accessible.");
           ok(module_list[0].sub_module !== undefined, "Dependency returned.");
           ok(module_list[0].sub_module.test_value, "Dependency accessible.");
           ok(module_list[1].sub_module !== undefined, "External dependency returned.");
           ok(module_list[1].sub_module.test_value, "External dependency accessible.");
-          ok(baz.length === 1, "Subsequent requests receive module(s) from memory.");
+          ok(baz.length === 1, "Subsequent requests served from memory.");
 
           start();
         })
         .fail(console.log);
+    });
+
+    asyncTest("Load dependencies by path, inline with sub-sub-dependency", function () {
+      declare("opq", ["bar"], function (module_list) {
+        return {
+          "name": "opq",
+          "sub_module": module_list[0],
+          "test_value": true
+        };
+      });
+
+      request([
+        {"name": "xyz", "src": "js/sub/xyz.js", "dependencies": ["baz"]},
+        {"name": "opq", "src": "js/opq.js", "dependencies": ["bar"]}
+      ])
+      .then(function (module_list) {
+        var baz = document.querySelectorAll("script[src='js/baz.js']");
+
+        ok(module_list !== undefined, "List of modules returned.");
+        ok(module_list.length === 2, "Module list contains two modules.");
+        ok(module_list[0].test_value, "Module property 1 from subfolder accessible.");
+        ok(module_list[1].test_value, "Module property 2 accessible.");
+        ok(module_list[0].sub_module !== undefined, "Dependency returned.");
+        ok(module_list[0].sub_module.test_value, "Dependency accessible.");
+        ok(module_list[1].sub_module !== undefined, "External dependency returned.");
+        ok(module_list[1].sub_module.test_value, "External dependency accessible.");
+        ok(baz.length === 1, "Subsequent requests served from memory.");
+
+        start();
+      })
+      .fail(console.log);
     });
   });
 
