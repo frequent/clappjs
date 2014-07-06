@@ -3,12 +3,18 @@
 "use strict";
 
 var toJSLint = [
+
+  // test modules
+  "modules/clapp/test.clapp.js",
+
+  // script files 
   "../lib/clapp/clapp.js"
 ];
 
 var toCSSLint = [
   "../css/test.css"
 ];
+
 /*
 var fileList = [
   // root
