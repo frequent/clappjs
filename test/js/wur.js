@@ -1,7 +1,7 @@
-declare("wur", ["baz"], function (module_list) {
+declare("wur", ["baz"], function (baz) {
   return {
     "name": "wur",
-    "sub_module": module_list[0],
+    "sub_module": baz,
     "test_value": true
   };
 });

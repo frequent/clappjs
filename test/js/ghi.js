@@ -1,7 +1,7 @@
-declare("ghi", ["baz"], function (module_list) {
+declare("ghi", ["baz"], function (baz) {
   return {
     "name": "ghi",
-    "sub_module": module_list[0],
+    "sub_module": baz,
     "test_value": true
   };
 });

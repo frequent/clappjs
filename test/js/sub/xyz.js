@@ -1,7 +1,7 @@
-declare("xyz", ["baz"], function (module_list) {
+declare("xyz", ["baz"], function (baz) {
   return {
     "name": "xyz",
-    "sub_module": module_list[0],
+    "sub_module": baz,
     "test_value": true
   };
 });

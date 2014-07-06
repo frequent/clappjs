@@ -1,4 +1,4 @@
-declare("foo", [], function (module_list) {
+declare("foo", [], function () {
   return {
     "name": "foo",
     "test_value": true
