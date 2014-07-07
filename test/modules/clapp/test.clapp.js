@@ -1,6 +1,6 @@
 /*jslint indent: 2, maxlen: 80, nomen: true, todo: true */
 /*global window, module, test, ok, stop, start, JSLINT, toLint, asyncTest,
-  request, declare, console, document */
+  request, declare, console, document, require, QUnit */
 (function () {
   "use strict";
 
@@ -64,6 +64,27 @@
   module("module loader");
 
   contentLoaded(window, function () {
+
+    // requirjs... 
+    QUnit.config.autostart = false;
+
+    window.setTimeout(function () {
+
+      // some old fashioned require-ing to make sure nothing is broken
+      require(["req"], function (req) {
+
+        test("RequireJS still works normally alongside clapp", function () {
+          ok(req !== undefined, "Calling require still returns something");
+          ok(req.test_value !== undefined, "Module correctly declared");
+          ok(req.sub_module.test_value !== undefined, "Sub dependency loaded");
+        });
+
+      });
+
+      start();
+
+    }, 10);
+
 
     asyncTest("Plain module load", function () {
       request(["foo"])
@@ -291,6 +312,7 @@
         .then(testI18n)
         .fail(console.log);
     });
+
   });
 
 }());
