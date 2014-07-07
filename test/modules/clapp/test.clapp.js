@@ -149,19 +149,23 @@
 
     asyncTest("Multiple dependencies, inline/external/sub", function () {
       declare("abc", ["baz"], function (baz) {
-        return {
+        var abc = {
           "name": "abc",
           "sub_module": baz,
           "test_value": true
         };
+
+        return abc;
       });
 
       declare("def", ["abc"], function (abc) {
-        return {
+        var def = {
           "name": "def",
           "sub_module": abc,
           "test_value": true
         };
+
+        return def;
       });
 
       request(["def", "ghi"])
@@ -185,11 +189,13 @@
 
     asyncTest("Load modules by path, inline, sub-sub-dependency", function () {
       declare("opq", ["bar"], function (bar) {
-        return {
+        var opq = {
           "name": "opq",
           "sub_module": bar,
           "test_value": true
         };
+
+        return opq;
       });
 
       request([

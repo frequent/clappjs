@@ -1,6 +1,9 @@
 declare("pum", [], function () {
-  return {
+
+  var pum = {
     "name": "pum",
     "test_value": true
   };
+
+  return pum;
 });

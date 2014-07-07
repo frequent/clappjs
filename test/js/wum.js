@@ -1,6 +1,9 @@
 declare("wum", [], function () {
-  return {
+
+  var wum = {
     "name": "wum",
     "test_value": true
   };
+
+  return wum;
 });

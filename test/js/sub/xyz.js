@@ -1,7 +1,10 @@
 declare("xyz", ["baz"], function (baz) {
-  return {
+
+  var xyz = {
     "name": "xyz",
     "sub_module": baz,
     "test_value": true
   };
+
+  return xyz;
 });
