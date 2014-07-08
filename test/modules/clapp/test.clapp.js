@@ -65,7 +65,7 @@
 
   contentLoaded(window, function () {
 
-    // requirjs... 
+    // requirjs...
     QUnit.config.autostart = false;
 
     window.setTimeout(function () {
@@ -87,43 +87,38 @@
 
 
     asyncTest("Plain module load", function () {
-      request(["foo"])
-        .then(function (list) {
+      request(["foo"]).spread(function (foo) {
 
-          ok(window.request && window.declare, "clappjs initiliazed");
-          ok(list !== undefined, "List of modules returned.");
-          ok(list.length === 1, "Module list contains one module.");
-          ok(list[0].test_value, "Module property accessible.");
+        ok(window.request && window.declare, "clappjs initiliazed");
+        ok(foo !== undefined, "Module returned.");
+        ok(foo.test_value, "Module property accessible.");
 
-          start();
-        })
+        start();
+      })
         .fail(console.log);
     });
 
     asyncTest("Plain module reload from memory", function () {
-      request(["foo"])
-        .then(function (list) {
-          var foo = document.querySelectorAll("script[src='js/foo.js']");
+      request(["foo"]).spread(function (foo) {
+        var foo_src = document.querySelectorAll("script[src='js/foo.js']");
 
-          ok(list !== undefined, "List of modules returned.");
-          ok(foo.length === 1, "Subsequent request gets module from memory.");
+        ok(foo !== undefined, "Module returned.");
+        ok(foo_src.length === 1, "Subsequent request loaded from memory.");
 
-          start();
-        })
+        start();
+      })
         .fail(console.log);
-
     });
 
     asyncTest("Plain module, deps declared in module callback", function () {
-      request(["bar"]).then(function (list) {
+      request(["bar"]).spread(function (bar) {
 
-        ok(list !== undefined, "List of modules returned.");
-        ok(list.length === 1, "One module returned");
-        ok(list[0].test_value, "Module property accessible.");
-        ok(list[0].sub_module_1 !== undefined, "Sub Dependency 1 returned.");
-        ok(list[0].sub_module_2 !== undefined, "Sub Dependency 2 returned.");
-        ok(list[0].sub_module_1.test_value, "Dependency value accessible.");
-        ok(list[0].sub_module_2.test_value, "Dependency value accessible.");
+        ok(bar !== undefined, "Module returned.");
+        ok(bar.test_value, "Module property accessible.");
+        ok(bar.sub_module_1 !== undefined, "Sub Dependency 1 returned.");
+        ok(bar.sub_module_2 !== undefined, "Sub Dependency 2 returned.");
+        ok(bar.sub_module_1.test_value, "Dependency value accessible.");
+        ok(bar.sub_module_2.test_value, "Dependency value accessible.");
 
         start();
       })
@@ -131,40 +126,40 @@
     });
 
     asyncTest("Multiple dependencies, no sub dependencies", function () {
-      request(["bum", "pum", "wum"])
-        .then(function (list) {
+      request(["bum", "pum", "wum"]).spread(function (bum, pum, wum) {
 
-          ok(list !== undefined, "List of modules returned.");
-          ok(list.length === 3, "Module list contains three modules.");
-          ok(list[0].test_value, "Module property 1 accessible.");
-          ok(list[1].test_value, "Module property 2 accessible.");
-          ok(list[2].test_value, "Module property 3 accessible.");
+        ok(bum !== undefined, "First module returned.");
+        ok(pum !== undefined, "Second module returned.");
+        ok(wum !== undefined, "Third module returned.");
+        ok(bum.test_value, "Module property 1 accessible.");
+        ok(pum.test_value, "Module property 2 accessible.");
+        ok(wum.test_value, "Module property 3 accessible.");
 
-          start();
-        })
+        start();
+      })
         .fail(console.log);
     });
 
     asyncTest("Multiple and sub dependencies, from memory", function () {
-      request(["bar", "pum", "wur"])
-        .then(function (list) {
-          var baz = document.querySelectorAll("script[src='js/baz.js']");
+      request(["bar", "pum", "wur"]).spread(function (bar, pum, wur) {
+        var baz = document.querySelectorAll("script[src='js/baz.js']");
 
-          ok(list !== undefined, "List of modules returned.");
-          ok(list.length === 3, "Module list contains three modules.");
-          ok(list[0].test_value, "Module property 1 accessible.");
-          ok(list[1].test_value, "Module property 2 accessible.");
-          ok(list[2].test_value, "Module property 3 accessible.");
-          ok(list[0].sub_module_1 !== undefined, "Dependency returned.");
-          ok(list[0].sub_module_1.test_value, "Dependency accessible.");
-          ok(list[0].sub_module_2 !== undefined, "Dependency returned.");
-          ok(list[0].sub_module_2.test_value, "Dependency accessible.");
-          ok(list[2].sub_module !== undefined, "Dependency returned.");
-          ok(list[2].sub_module.test_value, "Dependency accessible.");
-          ok(baz.length === 1, "Subsequent requests served from memory.");
+        ok(bar !== undefined, "Module 1 returned.");
+        ok(pum !== undefined, "Module 2 returned.");
+        ok(wur !== undefined, "Module 3 returned.");
+        ok(bar.test_value, "Module property 1 accessible.");
+        ok(pum.test_value, "Module property 2 accessible.");
+        ok(wur.test_value, "Module property 3 accessible.");
+        ok(bar.sub_module_1 !== undefined, "Dependency returned.");
+        ok(bar.sub_module_1.test_value, "Dependency accessible.");
+        ok(bar.sub_module_2 !== undefined, "Dependency returned.");
+        ok(bar.sub_module_2.test_value, "Dependency accessible.");
+        ok(wur.sub_module !== undefined, "Dependency returned.");
+        ok(wur.sub_module.test_value, "Dependency accessible.");
+        ok(baz.length === 1, "Subsequent requests served from memory.");
 
-          start();
-        })
+        start();
+      })
         .fail(console.log);
     });
 
@@ -189,22 +184,21 @@
         return def;
       });
 
-      request(["def", "ghi"])
-        .then(function (list) {
-          var baz = document.querySelectorAll("script[src='js/baz.js']");
+      request(["def", "ghi"]).spread(function (def, ghi) {
+        var baz = document.querySelectorAll("script[src='js/baz.js']");
 
-          ok(list !== undefined, "List of modules returned.");
-          ok(list.length === 2, "Module list contains two modules.");
-          ok(list[0].test_value, "Module property 1 accessible.");
-          ok(list[1].test_value, "Module property 2 accessible.");
-          ok(list[0].sub_module !== undefined, "Dependency returned.");
-          ok(list[0].sub_module.test_value, "Dependency accessible.");
-          ok(list[1].sub_module !== undefined, "External dependency ok.");
-          ok(list[1].sub_module.test_value, "External dependency access.");
-          ok(baz.length === 1, "Subsequent requests served from memory.");
+        ok(def !== undefined, "Module 1 returned.");
+        ok(ghi !== undefined, "Module 2 returned.");
+        ok(def.test_value, "Module property 1 accessible.");
+        ok(ghi.test_value, "Module property 2 accessible.");
+        ok(def.sub_module !== undefined, "Dependency returned.");
+        ok(def.sub_module.test_value, "Dependency accessible.");
+        ok(ghi.sub_module !== undefined, "External dependency ok.");
+        ok(ghi.sub_module.test_value, "External dependency access.");
+        ok(baz.length === 1, "Subsequent requests served from memory.");
 
-          start();
-        })
+        start();
+      })
         .fail(console.log);
     });
 
@@ -223,17 +217,17 @@
         {"name": "xyz", "src": "js/sub/xyz.js", "dependencies": ["baz"]},
         {"name": "opq", "src": "js/opq.js", "dependencies": ["bar"]}
       ])
-        .then(function (list) {
+        .spread(function (xyz, opq) {
           var baz = document.querySelectorAll("script[src='js/baz.js']");
 
-          ok(list !== undefined, "List of modules returned.");
-          ok(list.length === 2, "Module list contains two modules.");
-          ok(list[0].test_value, "Module property 1 from subfolder ok.");
-          ok(list[1].test_value, "Module property 2 accessible.");
-          ok(list[0].sub_module !== undefined, "Dependency returned.");
-          ok(list[0].sub_module.test_value, "Dependency accessible.");
-          ok(list[1].sub_module !== undefined, "External dependency returned.");
-          ok(list[1].sub_module.test_value, "External dependency accessible.");
+          ok(xyz !== undefined, "Module 1 returned.");
+          ok(opq !== undefined, "Module 2 returned.");
+          ok(xyz.test_value, "Module property 1 from subfolder ok.");
+          ok(opq.test_value, "Module property 2 accessible.");
+          ok(xyz.sub_module !== undefined, "Dependency returned.");
+          ok(xyz.sub_module.test_value, "Dependency accessible.");
+          ok(opq.sub_module !== undefined, "External dependency returned.");
+          ok(opq.sub_module.test_value, "External dependency accessible.");
           ok(baz.length === 1, "Subsequent requests served from memory.");
 
           start();
@@ -251,14 +245,10 @@
       }
 
       // run jquery tests
-      function testJquery(my_list) {
-        var $mod, div;
+      function testJquery($mod) {
+        var div = $mod(document).find("div").eq(0)[0].tagName;
 
-        $mod = my_list[0];
-        div = $mod(document).find("div").eq(0)[0].tagName;
-
-        ok(my_list !== undefined, "List of modules returned.");
-        ok(my_list.length === 1, "Module list contains one module.");
+        ok($mod !== undefined, "List of modules returned.");
         ok(window.$ === undefined, "jQuery is not set as a global.");
         ok(typeof $mod === "function", "jQuery returned as module.");
         ok($mod(document).length === 1, "jQuery $(document) works.");
@@ -273,11 +263,8 @@
       }
 
       // test jio
-      function testJIO(my_list) {
-        var jIO = my_list[0];
-
-        ok(my_list !== undefined, "List of modules returned.");
-        ok(my_list.length === 1, "Module list contains one module");
+      function testJIO(jIO) {
+        ok(jIO !== undefined, "List of modules returned.");
         ok(window.jIO === undefined, "Module is not set as a global");
         ok(typeof jIO.createJIO === "function", "Module methods available");
         ok(jIO.hex_sha256 !== undefined, "Module dependencies available");
@@ -293,11 +280,8 @@
       }
 
       // test i18n
-      function testI18n(my_list) {
-        var i18n = my_list[0];
-
-        ok(my_list !== undefined, "List of modules returned.");
-        ok(my_list.length === 1, "Module list contains one module");
+      function testI18n(i18n) {
+        ok(i18n !== undefined, "List of modules returned.");
         ok(window.i18n === undefined, "Module is not set as a global");
         ok(typeof i18n.t === "function", "Methods of module are accessible");
 
@@ -305,11 +289,11 @@
       }
 
       getJquery()
-        .then(testJquery)
+        .spread(testJquery)
         .then(getJIO)
-        .then(testJIO)
+        .spread(testJIO)
         .then(getI18n)
-        .then(testI18n)
+        .spread(testI18n)
         .fail(console.log);
     });
 
