@@ -2,9 +2,9 @@
   "use strict";
 
   require.config({
-    paths: {
-      "req": "../req",
-      "dep": "../dep"
+    "paths": {
+      "req": './../req',
+      "dep": './../dep'
     }
   });
 
