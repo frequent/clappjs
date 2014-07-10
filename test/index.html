@@ -3,25 +3,17 @@
 <head>
   <meta charset="utf-8" />
   <title>clappJS unit tests</title>
-  <link rel="stylesheet" href="../dev/qunit/qunit-1.13.0.css"
-        type="text/css" />
+  <link rel="stylesheet" href="../dev/qunit/qunit-1.13.0.css" type="text/css" />
+  <link rel="stylesheet" href="index.css" />
+
 </head>
 <body>
   <div id="qunit"></div>
 
   <script type="text/javascript" src="../lib/bluebird/bluebird-custom.js"></script>
+  <script src="index.js"></script>
 
   <!-- REQUIRE (for testing only) -->
-  <script type="text/javascript">
-  // this is necessary to make sure config is set before require call is made
-  // thx http://bit.ly/1n4lbst
-  require = {
-      "paths": {
-        "req": 'js/req',
-        "dep": 'js/dep'
-      }
-    };
-  </script>
   <script src="js/require/require.js"></script>
 
   <script src="../dev/sinonjs/sinon-1.8.2.js"></script>
@@ -29,10 +21,8 @@
   <script src="../dev/jslint/jslint.js"></script>
   <script src="../dev/csslint/csslint.js"></script>
 
-  <script src="index.js"></script>
-
   <!-- LIBS -->
-  <script src="../lib/rsvp/rsvp-custom.js"></script>
+  <!-- <script src="../lib/rsvp/rsvp-custom.js"></script> -->
   <script src="../lib/clapp/clapp.js"></script>
 
   <!-- TESTS -->

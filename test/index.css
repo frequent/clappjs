@@ -1,0 +1,4 @@
+/* override jqm */
+html.ui-mobile-rendering > * {
+  visibility: visible;
+}

@@ -1,7 +1,16 @@
 /*jslint indent: 2, node: true */
-
 "use strict";
 
+// requireJS - necessary to make sure config is set before require call are
+// made - thx http://bit.ly/1n4lbst
+var require = {
+  "paths": {
+    "req": 'js/req',
+    "dep": 'js/dep'
+  }
+};
+
+// files to lint (JS/CSS)
 var toJSLint = [
 
   // test modules
