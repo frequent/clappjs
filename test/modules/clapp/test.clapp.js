@@ -63,6 +63,8 @@
 
   module("module loader");
 
+  module("module loader");
+
   contentLoaded(window, function () {
 
     // requirjs...
@@ -239,9 +241,12 @@
 
       // load jquery
       function getJquery() {
-        return request([
-          {"name": "jquery", "src": "js/jquery/jquery-1.11.0.js", "shim": true}
-        ]);
+        return request([{
+          "name": "jquery",
+          "src": "js/jquery/jquery-1.11.0.js",
+          "shim": true,
+          "named": true
+        }]);
       }
 
       // run jquery tests
