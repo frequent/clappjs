@@ -63,8 +63,6 @@
 
   module("module loader");
 
-  module("module loader");
-
   contentLoaded(window, function () {
 
     // requirjs...
@@ -97,7 +95,7 @@
 
         start();
       })
-        .fail(console.log);
+        .catch(console.log);
     });
 
     asyncTest("Plain module reload from memory", function () {
@@ -109,7 +107,7 @@
 
         start();
       })
-        .fail(console.log);
+        .catch(console.log);
     });
 
     asyncTest("Plain module, deps declared in module callback", function () {
@@ -124,7 +122,7 @@
 
         start();
       })
-        .fail(console.log);
+        .catch(console.log);
     });
 
     asyncTest("Multiple dependencies, no sub dependencies", function () {
@@ -139,7 +137,7 @@
 
         start();
       })
-        .fail(console.log);
+        .catch(console.log);
     });
 
     asyncTest("Multiple and sub dependencies, from memory", function () {
@@ -162,7 +160,7 @@
 
         start();
       })
-        .fail(console.log);
+        .catch(console.log);
     });
 
     asyncTest("Multiple dependencies, inline/external/sub", function () {
@@ -201,7 +199,7 @@
 
         start();
       })
-        .fail(console.log);
+        .catch(console.log);
     });
 
     asyncTest("Load modules by path, inline, sub-sub-dependency", function () {
@@ -234,7 +232,7 @@
 
           start();
         })
-        .fail(console.log);
+        .catch(console.log);
     });
 
     asyncTest("Load and shim external dependencies", function () {
@@ -264,7 +262,7 @@
       function getJIO() {
         return request([
           {"name": "storage", "src": "js/jio/jio.js", "shim": true}
-        ]).fail(console.log);
+        ]).catch(console.log);
       }
 
       // test jio
@@ -281,7 +279,7 @@
           "name": "i18n",
           "src": "js/i18next/i18next.amd-1.7.3.js",
           "shim": true
-        }]).fail(console.log);
+        }]).catch(console.log);
       }
 
       // test i18n
@@ -299,7 +297,7 @@
         .spread(testJIO)
         .then(getI18n)
         .spread(testI18n)
-        .fail(console.log);
+        .catch(console.log);
     });
 
   });
