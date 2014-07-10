@@ -4,7 +4,7 @@
 (function () {
   "use strict";
 
-    /**
+   /**
    * Cross-browser wrapper for DOMContentLoaded
    * Thx Diego Perini - http://javascript.nwbox.com/ContentLoaded/
    * @caller  main entry point
@@ -251,10 +251,15 @@
       function testJquery($mod) {
         var div = $mod(document).find("div").eq(0)[0].tagName;
 
-        ok($mod !== undefined, "List of modules returned.");
-        ok(window.$ === undefined, "jQuery is not set as a global.");
-        ok(typeof $mod === "function", "jQuery returned as module.");
-        ok($mod(document).length === 1, "jQuery $(document) works.");
+        // prevent JQM from triggering later
+        $mod(document).on("mobileinit", function () {
+          $mod.mobile.autoInitializePage = false;
+        });
+
+        ok($mod !== undefined, "jQuery - List of modules returned.");
+        ok(window.$ === undefined, "jQuery - not set as a global.");
+        ok(typeof $mod === "function", "jQuery - returned as module.");
+        ok($mod(document).length === 1, "jQuery - $(document) works.");
         ok(div === "DIV", "Random jQuery methods (find, eq) work.");
       }
 
@@ -262,15 +267,15 @@
       function getJIO() {
         return request([
           {"name": "storage", "src": "js/jio/jio.js", "shim": true}
-        ]).catch(console.log);
+        ]);
       }
 
       // test jio
       function testJIO(jIO) {
-        ok(jIO !== undefined, "List of modules returned.");
-        ok(window.jIO === undefined, "Module is not set as a global");
-        ok(typeof jIO.createJIO === "function", "Module methods available");
-        ok(jIO.hex_sha256 !== undefined, "Module dependencies available");
+        ok(jIO !== undefined, "jIO - List of modules returned.");
+        ok(window.jIO === undefined, "jIO - Module is not set as a global");
+        ok(typeof jIO.createJIO === "function", "jiO - Methods available");
+        ok(jIO.hex_sha256 !== undefined, "jIO - Dependencies available");
       }
 
       // get plugin i18n, anonymous
@@ -279,14 +284,33 @@
           "name": "i18n",
           "src": "js/i18next/i18next.amd-1.7.3.js",
           "shim": true
-        }]).catch(console.log);
+        }]);
       }
 
       // test i18n
       function testI18n(i18n) {
-        ok(i18n !== undefined, "List of modules returned.");
-        ok(window.i18n === undefined, "Module is not set as a global");
-        ok(typeof i18n.t === "function", "Methods of module are accessible");
+        ok(i18n !== undefined, "i18n - List of modules returned.");
+        ok(window.i18n === undefined, "i18n - not set as a global");
+        ok(typeof i18n.t === "function", "i18n - Methods accessible");
+      }
+
+      // get jQuery Mobile
+      function getJQM() {
+        return request([{
+          "name": "mobile",
+          "src": "js/jquery-mobile/jquery-mobile.latest.js",
+          "shim": true
+        }, {
+          "name": "mobile_css",
+          "src": "js/jquery-mobile/jquery-mobile.latest.css"
+        }]);
+      }
+
+      // test jQuery Mobile
+      function testJQM(mobile) {
+        ok(mobile !== undefined, "List of modules returned.");
+        ok(window.$ === undefined, "jQuery not set as global");
+        ok(mobile.version !== undefined, "Properties accessible");
 
         start();
       }
@@ -297,6 +321,8 @@
         .spread(testJIO)
         .then(getI18n)
         .spread(testI18n)
+        .then(getJQM)
+        .spread(testJQM)
         .catch(console.log);
     });
 
