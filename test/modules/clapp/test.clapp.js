@@ -163,6 +163,23 @@
         .catch(console.log);
     });
 
+    asyncTest("Load multiple instances of same dependency", function () {
+      request(["mfg", "mfg", "mfg"]).spread(function (a, b, c) {
+        var mfg = document.querySelectorAll("script[src='js/mfg.js']");
+
+        ok(a !== undefined, "Module 1 returned.");
+        ok(b !== undefined, "Module 2 returned.");
+        ok(c !== undefined, "Module 3 returned.");
+        ok(a.test_value, "Module 1 accessible.");
+        ok(b.test_value, "Module 2 accessible.");
+        ok(c.test_value, "Module 3 accessible.");
+        ok(mfg.length === 1, "Same file multiple times in batch served once.");
+
+        start();
+      })
+        .catch(console.log);
+    });
+
     asyncTest("Multiple dependencies, inline/external/sub", function () {
       declare("abc", ["baz"], function (baz) {
         var abc = {
