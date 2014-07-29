@@ -17,7 +17,7 @@ var toJSLint = [
   "modules/clapp/test.clapp.js",
 
   // script files 
-  "../lib/clapp/clapp.js"
+  "../src/clapp.js"
 ];
 
 var toCSSLint = [

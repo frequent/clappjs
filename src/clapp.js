@@ -324,7 +324,6 @@ var declare, request;
           break;
         case "js":
           el = document.createElement("script");
-          el.type = "text/javascript";
           el.src = path;
           break;
         }
@@ -418,28 +417,29 @@ var declare, request;
     //       requests on the initial page load will be served from
     //       callback_dict. Switching to cache would require to handle inline
     //       modules, manage addition of script tags (xyz.js can be <script>
-    //       tag-ged multiple times and handling of non-availability of cache
+    //       tag-ged multiple times) and handling of non-availability of cache
     //       (Chrome with self-signed SSL for example). So far, I prefer
     //       the callback_dict
-    // NOTE: Question is how to serve large modules from memory (like $)
-    //       which must be slow to re-parse every time it's needed.
+    // NOTE: Question is how much penalty for re-parsing large modules (JQM)
     clappjs.callback_dict[name] = clappjs.callback_dict[name] ||
       new Promise(function (resolve) {
         resolver = resolve;
         if (dependency_list.length === 0) {
           return resolver(callback.apply(window));
         }
+
+        // WARNING: missing a catch()
         return request(dependency_list)
           .then(digestDependencyArray)
-          .then(resolveDependencyArray)
-          .catch(console.log);
+          .then(resolveDependencyArray);
+          //.catch(console.log);
       });
   };
 
   /**
    * "Request" a module for immideate use (mimics "require")
    *
-   *      request(["foo", "bar"]).then(function(module_array) {});
+   *      request(["foo", "bar"]).spread(function(foo, bar) {});
    *
    * @method  request
    * @param   {Array}   module_list List of modules to load
@@ -492,17 +492,10 @@ var declare, request;
       return Promise.all(my_return_array);
     }
 
-    // step needed to convert ["a", "b", "c"] into "a", "b", "c"
-    function returnArgumentList(my_return_values) {
-      return my_return_values;
-    }
-
-
     // START: create loading order of bundles [["a", "b"], [.. to load
     return requestBundleList(setLoadingOrder(module_list))
       .then(assembleReturnArray)
-      .then(returnArray)
-      .then(returnArgumentList);
+      .then(returnArray);
   };
 
 }(document, Promise));

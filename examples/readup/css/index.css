@@ -1,0 +1,4 @@
+/* fix viewport for IE10 */
+@-ms-viewport{
+  width: device-width;
+}

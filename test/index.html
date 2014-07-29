@@ -1,42 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>clappJS unit tests</title>
-  <link rel="stylesheet" href="../dev/qunit/qunit-1.13.0.css" type="text/css" />
-  <link rel="stylesheet" href="index.css" />
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>clappjs testrunner</title>
+    <link rel="stylesheet" href="../dev/qunit/qunit-1.13.0.css" />
+    <link rel="stylesheet" href="index.css" />
 
-</head>
-<body>
-  <div id="qunit"></div>
+  </head>
+  <body>
+    <div id="qunit"></div>
 
-  <script type="text/javascript" src="../lib/bluebird/bluebird-custom.js"></script>
-  <script src="index.js"></script>
+    <script src="../lib/bluebird/bluebird-custom.js"></script>
+    <script src="index.js"></script>
 
-  <!-- REQUIRE (for testing only) -->
-  <script src="js/require/require.js"></script>
+    <!-- REQUIRE (for testing only) -->
+    <script src="js/require/require.js"></script>
 
-  <script src="../dev/sinonjs/sinon-1.8.2.js"></script>
-  <script src="../dev/qunit/qunit-1.13.0.js"></script>
-  <script src="../dev/jslint/jslint.js"></script>
-  <script src="../dev/csslint/csslint.js"></script>
+    <script src="../dev/sinonjs/sinon-1.8.2.js"></script>
+    <script src="../dev/qunit/qunit-1.13.0.js"></script>
+    <script src="../dev/jslint/jslint.js"></script>
+    <script src="../dev/csslint/csslint.js"></script>
 
-  <!-- LIBS -->
-  <!-- <script src="../lib/rsvp/rsvp-custom.js"></script> -->
-  <script src="../lib/clapp/clapp.js"></script>
+    <!-- LIBS -->
+    <!--
+    <script src="../lib/rsvp/rsvp-custom.js"></script>
+    -->
+    <script src="../src/clapp.js"></script>
 
-  <!-- TESTS -->
-  <!-- syntax   -->
-  <script src="modules/jslint/test.jslint.js"></script>
-  <script src="modules/csslint/test.csslint.js"></script>
+    <!-- TESTS -->
+    <!-- syntax   -->
+    <script src="modules/jslint/test.jslint.js"></script>
+    <script src="modules/csslint/test.csslint.js"></script>
 
-  <!-- UNIT -->
-  <!-- modules -->
-  <script src="modules/clapp/test.clapp.js"></script>
+    <!-- UNIT -->
+    <!-- modules -->
+    <script src="modules/clapp/test.clapp.js"></script>
 
-  <!-- INTEGRATION -->
+    <!-- INTEGRATION -->
 
 
-  <!-- BUILD -->
-</body>
+    <!-- BUILD -->
+    <!-- minify/uglify -->
+
+    <!-- concat -->
+
+    <!-- DEPLOY -->
+  </body>
 </html>
