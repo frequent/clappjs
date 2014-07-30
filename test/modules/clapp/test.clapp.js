@@ -4,7 +4,7 @@
 (function () {
   "use strict";
 
-   /**
+  /**
    * Cross-browser wrapper for DOMContentLoaded
    * Thx Diego Perini - http://javascript.nwbox.com/ContentLoaded/
    * @caller  main entry point
@@ -289,6 +289,7 @@
 
       // test jio
       function testJIO(jIO) {
+        console.log(jIO);
         ok(jIO !== undefined, "jIO - List of modules returned.");
         ok(window.jIO === undefined, "jIO - Module is not set as a global");
         ok(typeof jIO.createJIO === "function", "jiO - Methods available");

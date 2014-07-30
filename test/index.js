@@ -21,7 +21,7 @@ var toJSLint = [
 ];
 
 var toCSSLint = [
-  "../css/test.css"
+  "css/test.css"
 ];
 
 /*
