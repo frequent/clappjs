@@ -203,7 +203,7 @@ var declare, request;
    * testing for dependencies recursively and generating bundles of files
    * to load, for example:
    * ["localStorage"] > returns ["rsvp", "sha256"], ["jio"], ["localStorage"]
-   * Note: if dependencies are not stored anywhere upfront this won't work!
+   * NOTE: remove? - if dependencies are not stored upfront this won't work!
    * @method  setLoadingOrder
    * @param   {Array}   module_list   List of modules to list
    * @param   {Array}   bundle_list   Response being assembled
@@ -273,6 +273,38 @@ var declare, request;
   }
 
   /**
+   * To have another path fallback, try to see whether a module is a
+   * dependency of another module and try to load from the same location
+   * @method  trace
+   * @param   {String}  name  Module name to search
+   * @returns {Boolean/undefined} Name of parent module
+   */
+  function trace(name) {
+    var dep, dict, module, i, len, sub, path;
+
+    dict = clappjs.dependency_dict;
+
+    for (dep in dict) {
+      if (dict.hasOwnProperty(dep)) {
+        module = dict[dep];
+        if (module) {
+          for (i = 0, len = module.length; i < len; i += 1) {
+            sub = module[i];
+            if (name === sub.name) {
+              path = clappjs.path_dict[dep];
+
+              if (path) {
+                return path.substring(0, path.lastIndexOf("/")) +
+                    "/" + name + ".js";
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * Request a bundle of files by tucking them onto the doc head and waiting
    * for them to load and run (eg ["foo", "bar", "baz"])
    * @method  requestBundle
@@ -311,7 +343,7 @@ var declare, request;
       } else {
 
         // punt for path...
-        path =  clappjs.path_dict[mod] || "js/" + mod + ".js";
+        path =  clappjs.path_dict[mod] || trace(mod) || "js/" + mod + ".js";
 
         // humhum switch...
         switch (path.split(".").pop().split("?")[0]) {
