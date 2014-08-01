@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>clappjs testrunner</title>
     <link rel="stylesheet" href="dev/qunit/qunit-1.13.0.css" />
-    <link rel="stylesheet" href="index.css" />
+    <link rel="stylesheet" href="test.css" />
 
   </head>
   <body>
     <div id="qunit"></div>
 
     <script src="../lib/bluebird/bluebird-custom.js"></script>
-    <script src="index.js"></script>
+    <script src="test.js"></script>
 
     <!-- REQUIRE (for testing only) -->
     <script src="js/require/require.js"></script>
@@ -23,9 +23,7 @@
     <script src="dev/csslint/csslint.js"></script>
 
     <!-- LIBS -->
-    <!--
-    <script src="../lib/rsvp/rsvp-custom.js"></script>
-    -->
+    <!-- <script src="../lib/rsvp/rsvp-custom.js"></script> -->
     <script src="../src/clapp.js"></script>
 
     <!-- TESTS -->
@@ -41,10 +39,22 @@
 
 
     <!-- BUILD -->
-    <!-- minify/uglify -->
-
     <!-- concat -->
 
-    <!-- DEPLOY -->
+    <!-- minify/uglify -->
+    <script src="modules/uglify2/lib/utils.js"></script>
+    <script src="modules/uglify2/lib/ast.js"></script>
+    <script src="modules/uglify2/lib/parse.js"></script>
+    <script src="modules/uglify2/lib/transform.js"></script>
+    <script src="modules/uglify2/lib/scope.js"></script>
+    <script src="modules/uglify2/lib/output.js"></script>
+    <script src="modules/uglify2/lib/compress.js"></script>
+    <!-- <script src="modules/uglify2/lib/sourcemap.js"></script> -->
+    <!-- <script src="modules/uglify2/mozilla-ast.js"></script> -->
+    <script src="modules/uglify2/uglify2.js"></script>
+
+    <!-- commit/upload -->
+
+
   </body>
 </html>

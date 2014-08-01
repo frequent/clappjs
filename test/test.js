@@ -1,4 +1,4 @@
-/*jslint indent: 2, node: true */
+/*jslint indent: 2 */
 "use strict";
 
 // requireJS - necessary to make sure config is set before require call are
@@ -15,6 +15,9 @@ var toJSLint = [
 
   // test modules
   "modules/clapp/test.clapp.js",
+//   "modules/jslint/jslint.js",
+//   "modules/csslint/csslint.js",
+//   "modules/uglify2/uglify2.js",
 
   // script files 
   "../src/clapp.js"
@@ -23,6 +26,12 @@ var toJSLint = [
 var toCSSLint = [
   "css/test.css"
 ];
+
+
+var toUglify = [
+  "../src/clapp.js"
+];
+
 
 /*
 var fileList = [
