@@ -3,7 +3,7 @@
 (function () {
   "use strict";
 
-  module("csslint");
+  QUnit.module("csslint");
 
   /**
    * CSS Lint a list of files

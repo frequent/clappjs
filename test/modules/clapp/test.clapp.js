@@ -61,9 +61,9 @@
     }
   }
 
-  module("module loader");
-
   contentLoaded(window, function () {
+
+    QUnit.module("module loader");
 
     // requirjs...
     QUnit.config.autostart = false;
@@ -289,10 +289,10 @@
 
       // test jio
       function testJIO(jIO) {
-        console.log(jIO);
         ok(jIO !== undefined, "jIO - List of modules returned.");
         ok(window.jIO === undefined, "jIO - Module is not set as a global");
         ok(typeof jIO.createJIO === "function", "jiO - Methods available");
+        /* fails here randomly */
         ok(jIO.hex_sha256 !== undefined, "jIO - Dependencies available");
       }
 
