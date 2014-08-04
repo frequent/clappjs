@@ -1,9 +1,10 @@
 /*jslint indent: 2, maxlen: 80, nomen: true, todo: true */
-/*global module, test, ok, stop, start, XMLHttpRequest, uglify, console */
+/*global module, test, ok, stop, start, XMLHttpRequest, uglify, console,
+ parse, Compressor, JS_Parse_Error, DefaultsError, Error, toUglifyJS */
 (function () {
   "use strict";
 
-  QUnit.module("uglify2");
+  module("uglifyjs");
 
   /*
    * Thx - wrapper created by Dan Wolff (danwolff.se)
@@ -68,12 +69,12 @@
    */
   function uglify(code, options) {
     var passed_options, parse_options, compress_options, output_options,
-      toplevel_ast, compressor, compressed_ast, code;
+      toplevel_ast, compressor, compressed_ast;
 
     passed_options = options || {};
-    parse_options = options.parse || default_options.parse;
-    compress_options = options.compress || default_options.compress;
-    output_options = options.output || default_options.output;
+    parse_options = passed_options.parse || default_options.parse;
+    compress_options = passed_options.compress || default_options.compress;
+    output_options = passed_options.output || default_options.output;
 
     // 1. Parse
     toplevel_ast = parse(code, parse_options);
@@ -98,13 +99,14 @@
    * generate an error message to display in Qunit
    * @method  showUglyJsError
    * @param   {Object}  e     Error object thrown
-   * @return  {String}  HTML Error message
+   * @param   {String}  input String to minify on which error occurred
+   * @return  {String}  HTML  Error message
    */
-  function showUglyJSError(e) {
-    var message, input, lines, line, encodeHTML;
+  function showUglyJSError(e, input) {
+    var message, lines, line;
 
     function encodeHTML(str) {
-      return (str + '')
+      return str + ''
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/"/g, '&quot;');
@@ -114,13 +116,13 @@
       lines = input.split('\n');
       line = lines[e.line - 1];
 
-      message = 'Parse error: <strong>' + encodeHTML(e.message) + '</strong>\n' +
-        '<small>Line ' + e.line + ', column ' + e.col + '</small>\n\n' +
-        (lines[e.line-2] ? (e.line - 1) + ': ' + encodeHTML(lines[e.line-2]) + '\n' : '') +
-        e.line + ': ' +
-          encodeHTML(line.substr(0, e.col)) +
-          '<mark>' + encodeHTML(line.substr(e.col, 1) || ' ') + '</mark>' +
-          encodeHTML(line.substr(e.col + 1)) + '\n' +
+      message = 'Parse error: <strong>' + encodeHTML(e.message) +
+        '</strong>\n' + '<small>Line ' + e.line + ', column ' + e.col +
+        '</small>\n\n' + (lines[e.line - 2] ? (e.line - 1) + ': ' +
+          encodeHTML(lines[e.line - 2]) + '\n' : '') + e.line + ': ' +
+        encodeHTML(line.substr(0, e.col)) + '<mark>' +
+        encodeHTML(line.substr(e.col, 1) || ' ') + '</mark>' +
+        encodeHTML(line.substr(e.col + 1)) + '\n' +
         (lines[e.line] ? (e.line + 1) + ': ' + encodeHTML(lines[e.line]) : '');
     } else if (e instanceof DefaultsError) {
       message = '<strong>' + encodeHTML(e.msg) + '</strong>';
@@ -144,7 +146,7 @@
       var xhr = new XMLHttpRequest();
       xhr.onload = function () {
         start();
-        var output, i, input;
+        var output, input;
 
         input = xhr.responseText;
 
@@ -166,14 +168,14 @@
       };
       xhr.onerror = function () {
         start();
-        ok(false, "Unable to Uglify");
+        ok(false, "Unable to UglifyJS");
       };
       xhr.open("GET", url, true);
       xhr.send();
     });
   }
 
-  toUglify.forEach(setupUglify);
+  toUglifyJS.forEach(setupUglify);
 
 }());
 

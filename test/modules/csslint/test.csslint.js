@@ -1,9 +1,9 @@
 /*jslint indent: 2 */
-/*global module, test, ok, stop, start, XMLHttpRequest, JSLINT, toLint */
+/*global module, test, ok, stop, start, XMLHttpRequest, CSSLint, toCSSLint */
 (function () {
   "use strict";
 
-  QUnit.module("csslint");
+  module("csslint");
 
   /**
    * CSS Lint a list of files
@@ -21,13 +21,13 @@
 
         for (i = 0; i < data.messages.length; i += 1) {
           ok(
-              false,
-              url +
-                " line " + data.messages[i].line +
-                ", col " + data.messages[i].col + ":" +
-                data.messages[i].type + ": " +
-                data.messages[i].evidence + "\n" +
-                data.messages[i].reason
+            false,
+            url +
+              " line " + data.messages[i].line +
+              ", col " + data.messages[i].col + ":" +
+              data.messages[i].type + ": " +
+              data.messages[i].evidence + "\n" +
+              data.messages[i].reason
           );
         }
       };

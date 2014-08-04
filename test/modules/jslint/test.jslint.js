@@ -1,9 +1,9 @@
 /*jslint indent: 2 */
-/*global module, test, ok, stop, start, XMLHttpRequest, JSLINT, toLint */
+/*global module, test, ok, stop, start, XMLHttpRequest, JSLINT, toJSLint */
 (function () {
   "use strict";
 
-  QUnit.module("jslint");
+  module("jslint");
 
   /**
    * JSLint a list of files
