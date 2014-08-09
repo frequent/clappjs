@@ -5,8 +5,14 @@ var declare, request;
   "use strict";
 
   /* ====================================================================== */
-  /*                                CLAPPJS                                 */
+  /*                                LOADER                                  */
   /* ====================================================================== */
+
+  /**
+   * =========================================================================
+   *                Core module that manages loading of other modules
+   * =========================================================================
+   */
 
   /**
    * Internal "globals"
@@ -379,18 +385,6 @@ var declare, request;
         return response_list;
       });
   }
-
-  /* ====================================================================== */
-  /*                         Internal Module Loader                         */
-  /* ====================================================================== */
-
-  /**
-   * ======================================================================
-   * NOTE: We are using "request/declare" instead of "require/define" to have
-   * a promised-based modular loader inside the application independent of
-   * loaders like requireJS. 
-   * ======================================================================
-   */
 
   /**
    * "Declare" a module to the dependency_dict (similar to requirejs "define")
