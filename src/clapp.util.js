@@ -125,9 +125,6 @@
               reject(xhr);
               break;
             // case 2: // headers received
-            case 3:
-              // PARTIAL
-              notify();
             case 4:
               // DONE
               status = xhr.status;
@@ -170,6 +167,8 @@
           xhr.abort();
         }
       }
+
+      //function notifier() {}
 
       return new Promise(resolver, canceller);
     };
