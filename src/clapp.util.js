@@ -1,5 +1,5 @@
 /*jslint indent: 2, maxlen: 80, nomen: true, todo: true */
-/*global console, Promise, FileReader */
+/*global console, Promise, FileReader, declare, XMLHttpRequest, window */
 (function (Promise, FileReader) {
   "use strict";
 
@@ -17,8 +17,41 @@
     var util = {};
 
     /**
+     * global error handler
+     * thx: renderJS - http://bit.ly/1zSQQX5
+     * @method    error
+     * @param     {Object}    e   Error object
+     */
+    // TODO: log where?
+    util.error = function (e) {
+      if (e.constructor === XMLHttpRequest) {
+        console.error(e);
+
+        e = {
+          readyState: e.readyState,
+          status: e.status,
+          statusText: e.statusText,
+          response_headers: e.getAllResponseHeaders()
+        };
+      }
+
+      if (e.constructor === Array ||
+          e.constructor === String ||
+          e.constructor === Object) {
+        try {
+          e = JSON.stringify(e);
+        } catch (exception) {
+          console.error(exception);
+        }
+      }
+
+      console.warn(e);
+      //document.getElementsByTagName('body')[0].textContent = e;
+    };
+
+    /**
      * parse JSON if response is not automatically parsed by browser
-     * @method parse
+     * @method  parse
      * @param   {Object/String} data   Data to parse
      * @return  {Object} Parsed object
      */
@@ -76,34 +109,35 @@
      * @param  {Object}   param   Ajax parameters
      * @return {Promise} A Promise
      */
-    // TODO: only GET, only accept JSON?
     util.ajax = function (param) {
-      var header, xhr = new XMLHttpRequest();
+      var xhr = new XMLHttpRequest();
 
       function resolver(resolve, reject, notify) {
+        var k;
+
         function handler() {
           var status;
 
           try {
             switch (xhr.readyState) {
-              case 0:
-                // UNSENT
-                reject(xhr);
-                break;
-              // case 2: // headers received
-              // case 3:
-                // PARTIAL
-                // notify(e);
-              case 4:
-                // DONE
-                status = xhr.status;
+            case 0:
+              // UNSENT
+              reject(xhr);
+              break;
+            // case 2: // headers received
+            case 3:
+              // PARTIAL
+              notify();
+            case 4:
+              // DONE
+              status = xhr.status;
 
-                if (status < 200 || status >= 300)) {
-                  reject(xhr);
-                } else {
-                  resolve(util.parse(xhr.responseText));
-                }
-                break;
+              if (status < 200 || status >= 300) {
+                reject(xhr);
+              } else {
+                resolve(xhr.responseText);
+              }
+              break;
             }
           } catch (e) {
             reject(e);
@@ -111,9 +145,9 @@
         }
 
         if (typeof param.headers === 'object' && param.headers !== null) {
-          for (header in param.headers) {
-            if (param.headers.hasOwnProperty(header)) {
-              xhr.setRequestHeader(header, param.headers[header]);
+          for (k in param.headers) {
+            if (param.headers.hasOwnProperty(k)) {
+              xhr.setRequestHeader(k, param.headers[k]);
             }
           }
         }
@@ -248,5 +282,6 @@
     };
 
     return util;
+  });
 
 }(Promise, FileReader));
