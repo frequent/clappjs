@@ -35,7 +35,7 @@
       }
 
       return Promise.all(file_list);
-    }
+    };
 
     /**
      * Run a test method on a number of files

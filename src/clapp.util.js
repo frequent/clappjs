@@ -112,7 +112,7 @@
     util.ajax = function (param) {
       var xhr = new XMLHttpRequest();
 
-      function resolver(resolve, reject, notify) {
+      function resolver(resolve, reject) {
         var k;
 
         function handler() {
@@ -245,7 +245,11 @@
           callback_promise = new Promise()
             .cancellable()
             .then(function () {
-              return callback(evt);
+              if (callback) {
+                return callback(evt);
+              }
+              // jslint...
+              resolve(evt);
             })
             .then(null, function (error) {
               if (!(error instanceof Promise.CancellationError)) {
