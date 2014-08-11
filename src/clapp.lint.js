@@ -61,6 +61,12 @@
      */
     lint.cssLint = function (my_url_list) {
 
+      // helper: show CSS error
+      function showCSSLintErrors(my_url, my_err) {
+        return my_url + " line: " + my_err.line + ", col: " + my_err.col +
+            ":" + my_err.type + ": " + my_err.evidence + "\n" + my_err.reason;
+      }
+
       // helper: lint a file
       function cleanCSS(my_file_url, my_file_str) {
         test(my_file_url, 0, function () {
@@ -70,11 +76,7 @@
 
           for (i = 0, len = data.messages.length; i < len; i += 1) {
             err = data.messages[i];
-            ok(
-              false,
-              my_file_url + " line " + err.line + ", col " + err.col + ":" +
-                  err.type + ": " + err.evidence + "\n" + err.reason
-            );
+            ok(false, showCSSLintErrors(my_file_url, err));
           }
         });
       }
@@ -99,6 +101,12 @@
      */
     lint.jsLint = function (my_url_list) {
 
+      // helper: show a jslint error
+      function showJSLintError(my_url, my_err) {
+        return my_url + ": " + my_err.line + ": " + my_err.character + ": " +
+            my_err.evidence + "\n" + my_err.reason;
+      }
+
       // helper: lint a file
       function cleanJS(my_file_url, my_file_str) {
         test(my_file_url, 0, function () {
@@ -109,11 +117,7 @@
 
           for (i = 0, len = data.errors.length; i < len; i += 1) {
             err = data.errors[i];
-            ok(
-              false,
-              my_file_url + ":" + err.line + ":" + err.character + ": " +
-                  err.evidence + "\n" + err.reason
-            );
+            ok(false, showJSLintError(my_file_url, err));
           }
         });
       }
