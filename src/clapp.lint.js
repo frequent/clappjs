@@ -27,11 +27,11 @@
      * @param   {Array}   my_url_list   Urls to load
      * @return  {Promise} Array of file responses
      */
-    lint.promiseAjaxLoop = function (my_url_list) {
+    lint.promiseAjaxLoop = function (my_url_list, my_str_list) {
       var i, len, file_list;
 
       for (i = 0, file_list = [], len = my_url_list.length; i < len; i += 1) {
-        file_list[i] = util.ajax({"url": my_url_list[i]});
+        file_list[i] = my_str_list[i] || util.ajax({"url": my_url_list[i]});
       }
 
       return Promise.all(file_list);
@@ -59,7 +59,7 @@
      * @method  cssLint
      * @param   {Array} url_list  List of files to lint
      */
-    lint.cssLint = function (my_url_list) {
+    lint.cssLint = function (my_url_list, my_file_str_list) {
 
       // helper: show CSS error
       function showCSSLintErrors(my_url, my_err) {
@@ -88,7 +88,7 @@
       }
 
       // START:
-      return lint.promiseAjaxLoop(my_url_list)
+      return lint.promiseAjaxLoop(my_url_list, my_file_str_list || [])
         .then(cssLintFileList);
     };
 
@@ -99,7 +99,7 @@
      * @method  jsLint
      * @param   {String} url  Url of file to lint
      */
-    lint.jsLint = function (my_url_list) {
+    lint.jsLint = function (my_url_list, my_file_str_list) {
 
       // helper: show a jslint error
       function showJSLintError(my_url, my_err) {
@@ -129,7 +129,7 @@
       }
 
       // START:
-      return lint.promiseAjaxLoop(my_url_list)
+      return lint.promiseAjaxLoop(my_url_list, my_file_str_list || [])
         .then(jsLintFileList);
     };
 
