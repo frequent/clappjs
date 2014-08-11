@@ -1,40 +1,91 @@
 /*jslint indent: 2, maxlen: 80, nomen: true, todo: true */
-/*global Promise, XMLHttpRequest, css_process_list, dom_snapshot_list */
-// files to lint (JS/CSS)
-var toJSLint = [
+/*global window, document */
+(function () {
+  "use strict";
 
-  // test modules
-  "modules/clapp/test.clapp.js",
-  "modules/jslint/test.jslint.js",
-  "modules/csslint/test.csslint.js",
-  "modules/uglifyjs/test.uglifyjs.js",
-  "modules/uglifycss/test.uglifycss.js",
+  /**
+   * Cross-browser wrapper for DOMContentLoaded
+   * Thx Diego Perini - http://javascript.nwbox.com/ContentLoaded/
+   * @caller  main entry point
+   * @method  contentLoaded
+   * @param   {Object} win  scope/window
+   * @param   {Method} fn   callback
+   */
+  function contentLoaded(win, fn) {
+    var done, top, doc, root, add, rem, pre, init, poll;
 
-  // script files
-  "../src/clapp.js"
-];
+    done = false;
+    top = true;
+    doc = win.document;
+    root = doc.documentElement;
+    add = doc.addEventListener ? 'addEventListener' : 'attachEvent';
+    rem = doc.addEventListener ? 'removeEventListener' : 'detachEvent';
+    pre = doc.addEventListener ? '' : 'on';
 
-var toCSSLint = [
-  "css/test.css"
-];
+    init = function (e) {
+      if (e.type === 'readystatechange' && doc.readyState !== 'complete') {
+        return;
+      }
+      (e.type === 'load' ? win : doc)[rem](pre + e.type, init, false);
+      if (!done) {
+        done = true;
+        fn.call(win, e.type || e);
+      }
+    };
 
-var toUglifyJS = [
-  "../src/clapp.js"
-];
+    poll = function () {
+      try {
+        root.doScroll('left');
+      } catch (e) {
+        window.setTimeout(poll, 50);
+        return;
+      }
+      init('poll');
+    };
 
-var toUglifyCSS = [
-  "js/jquery-mobile/jquery-mobile.latest.css"
-];
+    if (doc.readyState === 'complete') {
+      fn.call(win, 'lazy');
+    } else {
+      if (doc.createEventObject && root.doScroll) {
+        try {
+          top = !win.frameElement;
+        } catch (ignore) {}
+        if (top) {
+          poll();
+        }
+      }
+      doc[add](pre + 'DOMContentLoaded', init, false);
+      doc[add](pre + 'readystatechange', init, false);
+      win[add](pre + 'load', init, false);
+    }
+  }
 
-var transferToCSSO = [];
+  // START:
+  contentLoaded(window, function () {
 
+    request([
+      {"name": "lint", "src": "../src/clapp.lint.js"}
+    ])
+    .spread(function (linter) {
+      var js_lint_list;
 
+      js_lint_list = [
+        "../src/clapp.util.js",
+        "../src/clapp.loader.js",
+        "../src/clapp.lint.js"
+      ];
 
-var css_process_list;
+      // Start "Autopilot"
+      return linter.jsLint(js_lint_list)
+        .then(function (x) {
+          console.log(x);
+        })
+        .catch(function (e) {
+          console.log(e);
+        });
+    });
 
-css_process_list = [
-  [
-    "js/jquery-mobile/jquery-mobile.latest.css"
-  ]
-];
+  });
+
+}());
 

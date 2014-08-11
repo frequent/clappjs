@@ -6,77 +6,30 @@
 
     <title>clappjs testrunner</title>
 
-    <link rel="stylesheet" href="src/qunit/qunit-1.13.0.css" />
+    <link rel="stylesheet" href="../lib/qunit/qunit-1.13.0.css" />
     <link rel="stylesheet" href="test.css" />
 
   </head>
   <body>
-    <div id="qunit"></div>
+    <div id="qunit">
+      <iframe id="testbed" src="">
+          Your browser doesn't support Iframes
+      </iframe>
+    </div>
 
-    <!-- PROMISE -->
     <script src="../lib/bluebird/bluebird-custom.js"></script>
+    <script src="../src/clapp.loader.js"></script>
 
-    <!-- REQUIRE (for testing only) -->
-    <script src="js/require/setup.js"></script>
-    <script src="js/require/require.js"></script>
+    <!-- require (for compatability only) -->
+    <script src="js-test-files/require/setup.js"></script>
+    <script src="js-test-files/require/require.js"></script>
 
-    <!-- QUNIT -->
-    <script src="src/sinonjs/sinon-1.8.2.js"></script>
-    <script src="src/qunit/qunit-1.13.0.js"></script>
-
-    <script src="test.js"></script>
-
-    <!-- <script src="../lib/rsvp/rsvp-custom.js"></script> -->
-    <script src="../src/clapp.js"></script>
-
-    <!-- TESTS -->
-    <!-- clean syntax   -->
-    <script src="modules/jslint/lib/jslint.js"></script>
-    <script src="modules/jslint/test.jslint.js"></script>
-    <script src="modules/csslint/lib/csslint.js"></script>
-    <script src="modules/csslint/test.csslint.js"></script>
-
-    <!-- UNIT -->
-    <!-- application modules -->
-    <script src="modules/clapp/test.clapp.js"></script>
-
-    <!-- INTEGRATION -->
-
-
-    <!-- BUILD -->
-    <!-- concat javascript files -->
-
-    <!-- uglify javascript files -->
-    <script src="modules/uglifyjs/lib/utils.js"></script>
-    <script src="modules/uglifyjs/lib/ast.js"></script>
-    <script src="modules/uglifyjs/lib/parse.js"></script>
-    <script src="modules/uglifyjs/lib/transform.js"></script>
-    <script src="modules/uglifyjs/lib/scope.js"></script>
-    <script src="modules/uglifyjs/lib/output.js"></script>
-    <script src="modules/uglifyjs/lib/compress.js"></script>
-    <!-- <script src="modules/uglifyjs/lib/sourcemap.js"></script> -->
-    <!-- <script src="modules/uglifyjs/mozilla-ast.js"></script> -->
-    <script src="modules/uglifyjs/test.uglifyjs.js"></script>
-
-    <!-- save javascript files -->
-
-    <!-- concat css files -->
-
-    <!-- uglify css files -->
-    <script src="modules/uglifycss/lib/uglifycss.js"></script>
-    <script src="modules/uglifycss/test.uglifycss.js"></script>
-
-    <!-- parse, uncss and stringify css files -->
-    <script src="modulets/jscssp/lib/jscssp.js"></script>
-
-    <!-- structurally optimize css files -->
-    <script src="modules/csso/lib/csso.web.js"></script>
-    <script src="modules/csso/test.csso.js"></script>
-
-    <!-- save javascript files -->
-
+    <!-- LIBS -->
+    <script src="../lib/sinonjs/sinon-1.8.2.js"></script>
+    <script src="../lib/qunit/qunit-1.13.0.js"></script>
 
     <!-- START -->
-    
+    <script src="test.js"></script>
+
   </body>
 </html>
