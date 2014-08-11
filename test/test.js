@@ -72,7 +72,8 @@
       js_lint_list = [
         "../src/clapp.util.js",
         "../src/clapp.loader.js",
-        "../src/clapp.lint.js"
+        "../src/clapp.lint.js",
+        "../src/clapp.build.js"
       ];
 
       // Start "Autopilot"
