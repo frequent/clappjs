@@ -323,6 +323,7 @@ var declare, request;
 
     promise_list = [];
     batch = document.createDocumentFragment();
+    window.module = window.module || {};
 
     // resolve a loaded dependency
     function passOutResolve(my_module, my_resolver) {
@@ -402,12 +403,6 @@ var declare, request;
    * @param   {Method} callback         Callback returning module
    */
   declare = function (name, dependency_list, callback) {
-    var resolver;
-
-    // remember for setLoadingOrder
-    if (dependency_list.length > 0) {
-      clappjs.dependency_dict[name] = dependency_list;
-    }
 
     // digest promises returned for each module
     function digestDependencyArray(my_dependency_array) {
@@ -429,11 +424,7 @@ var declare, request;
       // because window.exports will always be defined, it can only be used
       // if the callback returns undefined, eg. a third party plugin using
       // module.exports vs return foo
-      if (!return_value) {
-        return_value = window.exports;
-      }
-
-      resolver(return_value);
+      return return_value || window.exports;
     }
 
     // START: set callback to (resolved callback or new promise
@@ -448,17 +439,20 @@ var declare, request;
     //       the callback_dict
     // NOTE: Question is how much penalty for re-parsing large modules (JQM)
     clappjs.callback_dict[name] = clappjs.callback_dict[name] ||
-      new Promise(function (resolve) {
-        resolver = resolve;
+      new Promise(function (resolve, reject) {
+
         if (dependency_list.length === 0) {
-          return resolver(callback.apply(window));
+          resolve(callback.apply(window));
+        } else {
+          clappjs.dependency_dict[name] = dependency_list
         }
 
-        // WARNING: missing a catch()
         return request(dependency_list)
           .then(digestDependencyArray)
-          .then(resolveDependencyArray);
-          //.catch(console.log);
+          .then(resolveDependencyArray)
+          .catch(function (my_error) {
+            reject(my_error);
+          });
       });
   };
 
