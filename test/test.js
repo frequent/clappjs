@@ -1,12 +1,95 @@
 /*jslint indent: 2, maxlen: 80, nomen: true, todo: true */
-/*global window, document */
-(function () {
+/*global window, document, Promise */
+(function (window, document, Promise) {
   "use strict";
+
+  /**
+   * Run the tests defined in the runner method of each test module
+   * TODO: Should pass an option dict here specifying URL scheme, etc.
+   * @method  runTestModules
+   * @param   {Array}   my_module_list    List of requested modules
+   * @returns {Promise} A promise
+   */
+  function runTestModules(my_module_list) {
+    var i, len, test_list;
+
+    for (i = 0, test_list = [], len = my_module_list.length; i < len; i += 1) {
+      test_list[i] = my_module_list[i].runner({});
+    }
+
+    return Promise.all(test_list);
+  }
+
+  /**
+   * Append retrieved test files to DOM and run tests on them
+   * @method  declareAndRunTestModules
+   * @param   {Array}   my_test_file_list   List of strings to append to DOM
+   * @returns {Promise} A promise
+   */
+  function declareAndRunTestModules(my_test_file_list) {
+    var i, len, script, fragment, script_dict, request_list, arr;
+
+    request_list = [];
+    fragment = document.createDocumentFragment();
+    for (i = 0, len = my_test_file_list.length; i < len; i += 1) {
+      script_dict = my_test_file_list[i];
+
+      if (script_dict.src) {
+        arr = script_dict.url.split("/");
+        script = document.createElement("script");
+        script.type = "text/javascript";
+        script.text = script_dict.src;
+        request_list.push({"name": arr[arr.length - 1]});
+        fragment.appendChild(script);
+      }
+    }
+
+    // this will declare modules
+    document.getElementsByTagName('head')[0].appendChild(fragment);
+
+    return request(request_list)
+      .then(runTestModules);
+  }
+
+  /**
+   * Fetch module scripts currently in the DOM
+   * @method    fetchUrls
+   * @param     {String}  my_tag_name   Tag name of the module to fetch
+   * @returns   {Array}   List of found modules
+   */
+  function fetchUrls(my_tag_name) {
+    var i, len, url, element_list, module_list, test_module_list;
+
+    element_list = document.getElementsByTagName(my_tag_name);
+    module_list = [];
+    test_module_list = [];
+
+    for (i = 0, len = element_list.length; i < len; i += 1) {
+      switch (my_tag_name) {
+      case "script":
+        url = element_list[i].getAttribute("src");
+        break;
+      case "link":
+        url = element_list[i].getAttribute("href");
+        break;
+      }
+
+      if (url.indexOf("clapp") > 0) {
+        module_list.push(url);
+
+        // TODO: no?
+        if (my_tag_name = "script") {
+          test_module_list.push(url.replace("../src/", "../test/src/test."));
+        }
+      }
+    }
+
+    return [module_list, test_module_list];
+  }
 
   /**
    * Cross-browser wrapper for DOMContentLoaded
    * Thx Diego Perini - http://javascript.nwbox.com/ContentLoaded/
-   * @caller  main entry point
    * @method  contentLoaded
    * @param   {Object} win  scope/window
    * @param   {Method} fn   callback
@@ -63,30 +146,27 @@
   // START:
   contentLoaded(window, function () {
 
+    // let this be the start of the chain with the only caught :-)
     request([
       {"name": "lint", "src": "../src/clapp.lint.js"}
     ])
     .spread(function (linter) {
-      var js_lint_list;
+      var module_list = fetchUrls("script");
+      return Promise.all([
+        linter.jsLint(module_list[0]),
+        linter.jsLint(module_list[1])
+      ]);
+    })
+    .then(function (my_linted_section_list) {
+      var test_module_list = my_linted_section_list[1];
 
-      js_lint_list = [
-        "../src/clapp.util.js",
-        "../src/clapp.loader.js",
-        "../src/clapp.lint.js",
-        "../src/clapp.build.js"
-      ];
-
-      // Start "Autopilot"
-      return linter.jsLint(js_lint_list)
-        .then(function (x) {
-          console.log(x);
-        })
-        .catch(function (e) {
-          console.log(e);
-        });
-    });
+      return declareAndRunTestModules(test_module_list);
+    })
+    .caught(function (error) {
+      return error;
+    })
 
   });
 
-}());
+}(window, document, Promise));
 
