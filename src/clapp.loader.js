@@ -14,10 +14,6 @@ var declare, request;
    * =========================================================================
    */
 
-  /**
-   * Internal "globals"
-   * @global  clappjs
-   */
   var clappjs = {
 
     /**
@@ -49,7 +45,7 @@ var declare, request;
   };
 
   /**
-   * Revert an array: "name", [], function () -> function (), [], "name"
+   * Reverse an array: "name", [], function () -> function (), [], "name"
    * @method  revert
    * @param   {Array} arr Array to reverse
    * @return  {Array} reversed array
@@ -208,7 +204,6 @@ var declare, request;
    * Establish a loading order based on an array of passed modules to load,
    * testing for dependencies recursively and generating bundles of files
    * to load, for example:
-   * ["localStorage"] > returns ["rsvp", "sha256"], ["jio"], ["localStorage"]
    * NOTE: remove? - if dependencies are not stored upfront this won't work!
    * @method  setLoadingOrder
    * @param   {Array}   module_list   List of modules to list
@@ -403,6 +398,12 @@ var declare, request;
    * @param   {Method} callback         Callback returning module
    */
   declare = function (name, dependency_list, callback) {
+    var resolver;
+
+    // remember for setLoadingOrder
+    if (dependency_list.length > 0) {
+      clappjs.dependency_dict[name] = dependency_list;
+    }
 
     // digest promises returned for each module
     function digestDependencyArray(my_dependency_array) {
@@ -424,7 +425,11 @@ var declare, request;
       // because window.exports will always be defined, it can only be used
       // if the callback returns undefined, eg. a third party plugin using
       // module.exports vs return foo
-      return return_value || window.exports;
+      if (!return_value) {
+        return_value = window.exports;
+      }
+
+      return resolver(return_value);
     }
 
     // START: set callback to (resolved callback or new promise
@@ -440,17 +445,16 @@ var declare, request;
     // NOTE: Question is how much penalty for re-parsing large modules (JQM)
     clappjs.callback_dict[name] = clappjs.callback_dict[name] ||
       new Promise(function (resolve, reject) {
+        resolver = resolve;
 
         if (dependency_list.length === 0) {
           resolve(callback.apply(window));
-        } else {
-          clappjs.dependency_dict[name] = dependency_list
         }
 
         return request(dependency_list)
           .then(digestDependencyArray)
           .then(resolveDependencyArray)
-          .catch(function (my_error) {
+          .caught(function (my_error) {
             reject(my_error);
           });
       });

@@ -106,33 +106,31 @@
      * thx: jIO - http://www.j-io.org/ | thx: renderJS - http://bit.ly/1zSQQX5
      * info: oReilly http://bit.ly/1q2HAsn Browser networking
      * @method ajax
-     * @param  {Object}   param   Ajax parameters
-     * @return {Promise} A Promise
+     * @param   {Object}   my_param           Ajax parameters
+     * @param   {Integer}  my_resolve_error   Don't break on error
+     * @return  {Promise} A Promise
      */
-    util.ajax = function (param) {
-      var xhr = new XMLHttpRequest();
+    util.ajax = function (my_param, my_resolve_error) {
+      var xhr;
 
       function resolver(resolve, reject) {
-        var k;
+        var status, k, xhr_header_dict, refuse;
 
         function handler() {
-          var status;
-
           try {
             switch (xhr.readyState) {
             case 0:
-              // UNSENT
               reject(xhr);
               break;
             // case 2: // headers received
             case 4:
-              // DONE
               status = xhr.status;
+              refuse = status < 200 || status >= 300;
 
-              if (status < 200 || status >= 300) {
+              if (refuse && status !== my_resolve_error) {
                 reject(xhr);
               } else {
-                resolve(xhr.responseText);
+                resolve(xhr);
               }
               break;
             }
@@ -141,25 +139,24 @@
           }
         }
 
-        if (typeof param.headers === 'object' && param.headers !== null) {
-          for (k in param.headers) {
-            if (param.headers.hasOwnProperty(k)) {
-              xhr.setRequestHeader(k, param.headers[k]);
-            }
+        xhr = new XMLHttpRequest();
+        xhr_header_dict = my_param.headers || {};
+        //xhr.setRequestHeader('Accept', 'text/html');
+        //xhr.withCredentials = true;
+        xhr.open(my_param.type || "GET", my_param.url, true);
+
+        if (typeof my_param.beforeSend === 'function') {
+          my_param.beforeSend(xhr);
+        }
+
+        for (k in xhr_header_dict) {
+          if (xhr_header_dict.hasOwnProperty(k)) {
+            xhr.setRequestHeader(k, xhr_header_dict[k]);
           }
         }
 
-        xhr = new XMLHttpRequest();
-        xhr.open(param.type || "GET", param.url, true);
         xhr.onreadystatechange = handler;
-        //xhr.setRequestHeader('Accept', 'text/html');
-        //xhr.withCredentials = true;
-
-        if (typeof param.beforeSend === 'function') {
-          param.beforeSend(xhr);
-        }
-
-        xhr.send(param.data || null);
+        xhr.send(my_param.data || null);
       }
 
       function canceller() {
