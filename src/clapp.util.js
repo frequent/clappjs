@@ -50,6 +50,21 @@
     };
 
     /**
+     * Generate an internal utility UUID
+     * @method    uuid
+     * @returns   {String}  UUID
+     */
+    util.uuid = function () {
+      function S4() {
+        return ('0000' + Math.floor(
+          Math.random() * 0x10000 /* 65536 */
+        ).toString(16)).slice(-4);
+      }
+      return "id_" + S4() + S4() + "-" + S4() + "-" + S4() + "-"
+          + S4() + "-" + S4() + S4() + S4();
+    };
+
+    /**
      * parse JSON if response is not automatically parsed by browser
      * @method  parse
      * @param   {Object/String} data   Data to parse
@@ -259,21 +274,6 @@
         util.startListenTo(target, type, event_callback, useCapture);
       }
       return new Promise(itsANonResolvableTrap, canceller);
-    };
-
-    /**
-     * Generate an internal utility UUID
-     * @method    uuid
-     * @returns   {String}  UUID
-     */
-    util.uuid = function () {
-      function S4() {
-        return ('0000' + Math.floor(
-          Math.random() * 0x10000 /* 65536 */
-        ).toString(16)).slice(-4);
-      }
-      return "id_" + S4() + S4() + "-" + S4() + "-" + S4() + "-"
-          + S4() + "-" + S4() + S4() + S4();
     };
 
     /**
