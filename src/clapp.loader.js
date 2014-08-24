@@ -131,7 +131,7 @@ var declare, request;
     args = revert(arguments);
     name = args[2];
     list = clappjs.shim_list;
-    sync = window.sync_define;
+    sync = clappjs.sync_define;
     deps = args[1].map(shimDependencies);
     index = list.indexOf(name);
     named = list.reduce(testWhetherNamed, 0);
@@ -181,7 +181,7 @@ var declare, request;
         clappjs.shim_list = [];
         clappjs.named_module_list = [];
         if (window.define) {
-          window.sync_define = window.define;
+          clappjs.sync_define = window.define;
         }
         window.define = shimDefine;
         window.module = {"exports": {}};
