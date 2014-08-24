@@ -276,11 +276,6 @@
         function testJquery($mod) {
           var div = $mod(document).find("div").eq(0)[0].tagName;
 
-          // prevent JQM from triggering later
-          $mod(document).on("mobileinit", function () {
-            $mod.mobile.autoInitializePage = false;
-          });
-
           ok($mod !== undefined, "jQuery - List of modules returned.");
           ok(window.$ === undefined, "jQuery - not set as a global.");
           ok(typeof $mod === "function", "jQuery - returned as module.");
@@ -334,6 +329,8 @@
 
         // test jQuery Mobile
         function testJQM(mobile) {
+          mobile.autoInitializePage = false;
+
           ok(mobile !== undefined, "List of modules returned.");
           ok(window.$ === undefined, "jQuery not set as global");
           ok(mobile.version !== undefined, "Properties accessible");
@@ -354,7 +351,7 @@
 
     // =========================== API ===================================
     test_loader.runner = function () {
-      module("module - loader");
+      QUnit.module("module - loader");
 
       // give requireJS a breather...
       stop();
