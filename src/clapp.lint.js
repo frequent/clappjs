@@ -1,5 +1,5 @@
 /*jslint indent: 2, maxlen: 80, nomen: true, todo: true */
-/*global Promise, module, test, ok, declare */
+/*global Promise, module, test, ok, declare, console */
 (function (Promise) {
   "use strict";
 
@@ -16,8 +16,9 @@
   declare("lint", [
     {"name": 'util', "src": '../src/clapp.util.js'},
     {"name": 'jslint', "src": '../lib/jslint/jslint.js'},
-    {"name": 'csslint', "src": '../lib/csslint/csslint.js'}
-  ], function (util, JSLINT, CSSLint) {
+    {"name": 'csslint', "src": '../lib/csslint/csslint.js'},
+    {"name": 'htmllint', "src": '../lib/htmlInspector/htmlInspector.js'}
+  ], function (util, JSLINT, CSSLint, HTMLInspector) {
 
     var lint = {};
 
@@ -31,6 +32,19 @@
      */
     function flag404(my_url) {
       ok(false, "404: File not found: " + my_url);
+    }
+
+    /*
+     * Return an error string for JSLINT to display in Qunit test
+     * @method  showJSLintError
+     * @param   {String}    my_url  Urls of file which was tested
+     * @param   {Object}    my_err  Error Object
+     */
+    function showHTML5Errors(my_url, my_err) {
+      var str = my_url + ": " + my_err.rule + ": " + my_err.message + ": " +
+          my_err.context;
+      console.warn(str);
+      return str;
     }
 
     /*
@@ -63,14 +77,13 @@
      * @returns -
      */
     function runJSLint(my_file_url, my_string_to_lint) {
-      var i, len, data, err;
+      var i, len, data;
 
       JSLINT(my_string_to_lint, {});
       data = JSLINT.data();
 
       for (i = 0, len = data.errors.length; i < len; i += 1) {
-        err = data.errors[i];
-        ok(false, showJSLintError(my_file_url, err));
+        ok(false, showJSLintError(my_file_url, data.errors[i]));
       }
     }
 
@@ -82,14 +95,32 @@
      * @returns -
      */
     function runCSLint(my_file_url, my_string_to_lint) {
-      var i, len, data, err;
+      var i, len, data;
 
       data = CSSLint.verify(my_string_to_lint);
 
       for (i = 0, len = data.messages.length; i < len; i += 1) {
-        err = data.messages[i];
-        ok(false, showCSSLintErrors(my_file_url, err));
+        ok(false, showCSSLintErrors(my_file_url, data.messages[i]));
       }
+    }
+
+    /**
+     * Run HTML5lint on a string as Qunit test
+     * @method  runHTML5Lint
+     * @param   {String}    my_string_to_lint   String to Lint
+     * @returns -
+     */
+    function runHTML5Lint(my_file_url) {
+
+      HTMLInspector.inspect({
+        "onComplete": function (errors) {
+          var i, len;
+
+          for (i = 0, len = errors.length; i < len; i += 1) {
+            ok(false, showHTML5Errors(my_file_url, errors[i]));
+          }
+        }
+      });
     }
 
     /**
@@ -162,10 +193,7 @@
           return_arr[1](my_file_url, return_arr[0]);
         });
 
-        return {
-          "url": my_file_url,
-          "src": return_arr[0]
-        };
+        return {"url": my_file_url, "src": return_arr[0]};
       }
 
       // set module
@@ -197,10 +225,7 @@
           return_arr[1](my_file_url, return_arr[0]);
         });
 
-        return {
-          "url": my_file_url,
-          "src": return_arr[0]
-        };
+        return {"url": my_file_url, "src": return_arr[0]};
       }
 
       // set module
@@ -212,6 +237,30 @@
       // START:
       return promiseAjaxLoop(my_files_to_load, my_files_loaded || [])
         .then(cssLintFileList);
+    };
+
+    /**
+     * HTML Lint a list of files
+     * Thx https://github.com/mozilla/html5-lint
+     * @method  html5Lint
+     * @returns {Promise} A promise
+     */
+    lint.html5Lint = function () {
+
+      // set and run tests
+      function cleanHTML() {
+        test("current DOM", 0, function () {
+          runHTML5Lint("current DOM", runHTML5Lint);
+        });
+
+        return {"url": null, "src": null};
+      }
+
+
+      // START:
+      module("html5lint bundle");
+
+      return cleanHTML();
     };
 
     return lint;
