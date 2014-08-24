@@ -5,6 +5,7 @@
   "use strict";
 
   declare("test.clapp.loader.js", [], function () {
+
     var test_loader = {};
 
     // =========================== PRIVATE ===================================
@@ -345,8 +346,7 @@
           .then(getI18n)
           .spread(testI18n)
           .then(getJQM)
-          .spread(testJQM)
-          .catch(console.log);
+          .spread(testJQM);
       });
     }
 
