@@ -289,7 +289,7 @@
      * @returns {Promise} A promise
      */
     util.delayedEventTrigger = function (ms, target, type, useCapture,
-                                              callback, allowDefault ) {
+                                              callback, allowDefault) {
       var uuid, tagged_type, wrapped_callback;
 
       uuid = util.uuid();
