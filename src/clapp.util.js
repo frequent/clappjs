@@ -66,38 +66,38 @@
      * Add an event listener to an element and provide a callback to
      * run when this listener fires
      * @method  startListenTo
-     * @param   {Object}  obj     Element to attach event to
-     * @param   {String}  type    Name of the event
-     * @param   {Method}  fn      Callback function to run on event
-     * @capture {Boolean} capture useCapture
+     * @param   {Object}  target    Element to attach event to
+     * @param   {String}  type      Name of the event
+     * @param   {Method}  callback  Callback function to run on event
+     * @capture {Boolean} capture   UseCapture
      */
-    util.startListenTo = function (obj, type, fn, capture) {
-      if (obj.addEventListener) {
-        obj.addEventListener(type, fn, capture || false);
-      } else if (obj.attachEvent) {
-        obj["e" + type + fn] = fn;
-        obj[type + fn] = function () {
-          obj["e" + type + fn](window.event);
+    util.startListenTo = function (target, type, callback, capture) {
+      if (target.addEventListener) {
+        target.addEventListener(type, callback, capture || false);
+      } else if (target.attachEvent) {
+        target["e" + type + callback] = callback;
+        target[type + callback] = function () {
+          target["e" + type + callback](window.event);
         };
-        obj.attachEvent("on" + type, obj[type + fn]);
+        target.attachEvent("on" + type, target[type + callback]);
       }
     };
 
     /**
      * Remove an event listener from an element
      * @method  stopListenTo
-     * @param   {Object}  obj   Element to attach event to
-     * @param   {String}  type  Name of the event
-     * @param   {Method}  fn    Callback function to run on event
-     * @capture {Boolean} capture useCapture
+     * @param   {Object}  target    Element to attach event to
+     * @param   {String}  type      Name of the event
+     * @param   {Method}  callback  Callback function to run on event
+     * @capture {Boolean} capture   UseCapture
      */
-    util.stopListenTo = function (obj, type, fn, capture) {
-      if (obj.removeEventListener) {
-        obj.removeEventListener(type, fn, capture || false);
-      } else if (obj.detachEvent) {
-        obj.detachEvent("on" + type, obj[type + fn]);
-        obj[type + fn] = null;
-        obj["e" + type + fn] = null;
+    util.stopListenTo = function (target, type, callback, capture) {
+      if (target.removeEventListener) {
+        target.removeEventListener(type, callback, capture || false);
+      } else if (target.detachEvent) {
+        target.detachEvent("on" + type, target[type + callback]);
+        target[type + callback] = null;
+        target["e" + type + callback] = null;
       }
     };
 
@@ -259,6 +259,70 @@
         util.startListenTo(target, type, event_callback, useCapture);
       }
       return new Promise(itsANonResolvableTrap, canceller);
+    };
+
+    /**
+     * Generate an internal utility UUID
+     * @method    uuid
+     * @returns   {String}  UUID
+     */
+    util.uuid = function () {
+      function S4() {
+        return ('0000' + Math.floor(
+          Math.random() * 0x10000 /* 65536 */
+        ).toString(16)).slice(-4);
+      }
+      return "id_" + S4() + S4() + "-" + S4() + "-" + S4() + "-"
+          + S4() + "-" + S4() + S4() + S4();
+    };
+
+    /**
+     * Delay an event from triggering for a set amount of time
+     * This will run through loopEventLister and start/stopListen to
+     * @method  delayedEventTrigger
+     * @param   {Integer} ms  Delay in milliseconds
+     * @param   {Object}  target        DOM Element/Object to set listener
+     * @param   {String}  type          Type of event
+     * @param   {Boolean} useCapture    Use capture
+     * @param   {Function}callback      Callback method
+     * @param   {Boolean} allowDefault  Allow to preventDefault
+     * @returns {Promise} A promise
+     */
+    util.delayedEventTrigger = function (ms, target, type, useCapture,
+                                              callback, allowDefault ) {
+      var uuid, tagged_type, wrapped_callback;
+
+      uuid = util.uuid();
+      tagged_type = type + "." + uuid;
+      wrapped_callback = function (evt) {
+        var len, identifier, pending_promise;
+
+        len = evt.type.split(".");
+        identifier = len[len - 1];
+        pending_promise = util[identifier];
+
+        // this terminates a pending promise in case a new event comes in
+        // before ms has passed!
+        if (pending_promise) {
+          pending_promise.cancel();
+          delete util[identifier];
+        }
+
+        util[uuid] = Promise
+          .cancellable()
+          .delay(ms)
+          .then(callback);
+
+        return util[uuid];
+      };
+
+      return util.loopEventListener(
+        target,
+        tagged_type,
+        useCapture,
+        wrapped_callback,
+        allowDefault
+      );
     };
 
     /**
