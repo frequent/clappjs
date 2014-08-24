@@ -1,5 +1,5 @@
 /*jslint indent: 2, maxlen: 80, nomen: true, todo: true */
-/*global Promise, module, test, ok, declare, console */
+/*global Promise, module, test, ok, declare, console, QUnit, HTMLInspector */
 (function (Promise) {
   "use strict";
 
@@ -17,8 +17,12 @@
     {"name": 'util', "src": '../src/clapp.util.js'},
     {"name": 'jslint', "src": '../lib/jslint/jslint.js'},
     {"name": 'csslint', "src": '../lib/csslint/csslint.js'},
-    {"name": 'htmllint', "src": '../lib/htmlInspector/htmlInspector.js'}
-  ], function (util, JSLINT, CSSLint, HTMLInspector) {
+    {
+      "name": 'htmllint',
+      "src": '../lib/htmlInspector/htmlInspector.js',
+      "shim": true
+    }
+  ], function (util, JSLINT, CSSLint) {
 
     var lint = {};
 
@@ -42,8 +46,8 @@
      */
     function showHTML5Errors(my_url, my_err) {
       var str = my_url + ": " + my_err.rule + ": " + my_err.message + ": " +
-          my_err.context;
-      console.warn(str);
+        my_err.context;
+      console.warn(my_err.message, my_err.context);
       return str;
     }
 
@@ -198,7 +202,7 @@
 
       // set module
       function jsLintFileList(my_response_list) {
-        module("jslint bundle");
+        QUnit.module("jslint bundle");
         return runLint(my_files_to_load, my_response_list, cleanJS);
       }
 
@@ -230,7 +234,7 @@
 
       // set module
       function cssLintFileList(my_response_list) {
-        module("csslint bundle");
+        QUnit.module("csslint bundle");
         runLint(my_files_to_load, my_response_list, cleanCSS);
       }
 
@@ -245,6 +249,8 @@
      * @method  html5Lint
      * @returns {Promise} A promise
      */
+    // TODO: can't prevent inspector leaking onto window, because exports
+    // does not return the full inspector
     lint.html5Lint = function () {
 
       // set and run tests
@@ -256,9 +262,8 @@
         return {"url": null, "src": null};
       }
 
-
       // START:
-      module("html5lint bundle");
+      QUnit.module("html5lint bundle");
 
       return cleanHTML();
     };
