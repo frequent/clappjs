@@ -58,7 +58,7 @@
     // ============================= API =====================================
     test_util.runner = function () {
 
-      module("module - util");
+      QUnit.module("module - util");
 
       return Promise
         .delay(10)

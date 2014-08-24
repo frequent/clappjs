@@ -24,7 +24,7 @@
 
     // ============================= API =====================================
     test_lint.runner = function () {
-      module("module - lint");
+      QUnit.module("module - lint");
 
       return Promise
         .delay(10)
