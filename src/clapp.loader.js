@@ -98,14 +98,14 @@ var declare, request;
    * @returns {Array}  arguments
    */
   function shimDefine() {
-    var args, list, sync, name, index, deps, named;
+    var args, list, sync, name, index, deps, named, callback, pretty_deps;
 
     // add this module to clappjs internal structure
-    function shimDeclare(my_name, my_index) {
+    function shimDeclare(my_name, my_index, my_deps, my_pretty_deps, my_cb) {
       clappjs.shim_list.splice(my_index, 1);
       clappjs.named_module_list.splice(my_index, 1);
-      clappjs.dependency_dict[my_name] = args[1] || null;
-      declare(my_name, deps, args[0]);
+      clappjs.dependency_dict[my_name] = my_pretty_deps || null;
+      declare(my_name, my_deps, my_cb);
     }
 
     // shim-module which tries to load it's dependencies must also be shimmed
@@ -127,13 +127,8 @@ var declare, request;
       return my_counter;
     }
 
-    // WARNING: IE8 indexOf/map/reduce - http://bit.ly/1mgMCUy
-    args = revert(arguments);
-    name = args[2];
     list = clappjs.shim_list;
     sync = clappjs.sync_define;
-    deps = args[1].map(shimDependencies);
-    index = list.indexOf(name);
     named = list.reduce(testWhetherNamed, 0);
 
     // try to catch direct calls from requirejs. Make sure the list of shim
@@ -142,17 +137,26 @@ var declare, request;
 
     // return out
     if (sync && list.length - named === 0) {
-      return sync(arguments);
+      return sync.apply(null, arguments);
     }
+
+    // WARNING: IE8 indexOf/map/reduce - http://bit.ly/1mgMCUy
+    // WARNING: reverting earlier also reverts arguments and breaks define
+    args = revert(arguments);
+    name = args[2];
+    callback = args[0];
+    index = list.indexOf(name);
+    deps = args[1];
+    pretty_deps = args[1].map(shimDependencies);
 
     // named modules, easy to solve
     if (index > -1 && name) {
-      shimDeclare(name, index);
+      shimDeclare(name, index, pretty_deps, deps, callback);
     }
 
     // single anonymous dependency can be solved, too
     if (!name && list.length === 1) {
-      shimDeclare(list[0], 0);
+      shimDeclare(list[0], 0, pretty_deps, deps, callback);
     }
   }
 
@@ -173,7 +177,6 @@ var declare, request;
     name = conf.name;
 
     clappjs.path_dict[name] = conf.src || null;
-    clappjs.dependency_dict[name] = conf.dependencies || null;
 
     // compatablity sigh...
     if (conf.shim) {
