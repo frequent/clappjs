@@ -24,11 +24,14 @@
 
     // ============================= API =====================================
     test_lint.runner = function () {
-      module("module util");
+      module("module - lint");
 
       return Promise
         .delay(10)
         .then(testFoo);
+        //.then(testJSLint)
+        //.then(testCSSLint)
+        //.then(testHTMLint)
     };
 
     return test_lint;

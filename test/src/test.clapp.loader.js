@@ -253,7 +253,9 @@
     }
 
     /**
-     * Test shimming of external dependencies (not using declare)
+     * Test shimming of external dependencies (not using declare). This is
+     * loading jQuery, jQuery Mobile (with CSS), i18next and jIO with each
+     * using a different module testing syntax
      * @method    testShimExternalDependencies
      * @returns   {Promise} A promise
      */
@@ -352,7 +354,7 @@
 
     // =========================== API ===================================
     test_loader.runner = function () {
-      module("module loader");
+      module("module - loader");
 
       // give requireJS a breather...
       stop();
