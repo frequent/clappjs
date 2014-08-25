@@ -1,7 +1,3 @@
-/* just a linting test */
-article {
-  border: 1px solid red;
-}
 #qunit {
   height: 400px;
   overflow-y: scroll;

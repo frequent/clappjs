@@ -1,5 +1,6 @@
 /*jslint indent: 2, maxlen: 80, nomen: true, todo: true */
-/*global Promise, module, test, ok, declare, console, QUnit, HTMLInspector */
+/*global Promise, module, test, ok, declare, console, QUnit, HTMLInspector,
+ CSSLint */
 (function (Promise) {
   "use strict";
 
@@ -15,17 +16,25 @@
 
   declare("lint", [
     {"name": 'util', "src": '../src/clapp.util.js'},
-    {"name": 'jslint', "src": '../lib/jslint/jslint.js'},
-    {"name": 'csslint', "src": '../lib/csslint/csslint.js'},
+    {
+      "name": 'jslint',
+      "src": '../lib/jslint/jslint.js',
+      "shim": true
+    },
+    {
+      "name": 'csslint',
+      "src": '../lib/csslint/csslint.js',
+      "shim": true
+    },
     {
       "name": 'htmllint',
       "src": '../lib/htmlInspector/htmlInspector.js',
       "shim": true
     }
-  ], function (util, JSLINT, CSSLint) {
-
+  ], function (util, JSLINT) {
     var lint = {};
 
+    // TODO: why are modules still leaking into global namespace!!!
     // =========================== PRIVATE ===================================
 
     /**
@@ -47,7 +56,7 @@
     function showHTML5Errors(my_url, my_err) {
       var str = my_url + ": " + my_err.rule + ": " + my_err.message + ": " +
         my_err.context;
-      console.warn(my_err.message, my_err.context);
+      //console.warn(my_err.message, my_err.context);
       return str;
     }
 
@@ -58,8 +67,8 @@
      * @param   {Object}    my_err  Error Object
      */
     function showJSLintError(my_url, my_err) {
-      return my_url + ": " + my_err.line + ": " + my_err.character + ": " +
-          my_err.evidence + "\n" + my_err.reason;
+      return my_url + "|| line:" + my_err.line + ": " +
+          my_err.character + ": " +   my_err.evidence + "\n" + my_err.reason;
     }
 
     /*
@@ -69,8 +78,9 @@
      * @param   {Object}    my_err  Error Object
      */
     function showCSSLintErrors(my_url, my_err) {
-      return my_url + " line: " + my_err.line + ", col: " + my_err.col +
-          ":" + my_err.type + ": " + my_err.evidence + "\n" + my_err.reason;
+      return my_url + "|| line: " + my_err.line + ", " + my_err.col +
+          ":" + my_err.type + ": " + my_err.message + "\n || Evidence:" +
+              my_err.evidence;
     }
 
     /**

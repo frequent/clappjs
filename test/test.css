@@ -1,4 +1,4 @@
 /* override jqm */
-html.ui-mobile-rendering > * {
+.ui-mobile-rendering > body {
   visibility: visible;
 }
