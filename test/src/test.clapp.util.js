@@ -1,5 +1,5 @@
 /*jslint indent: 2, maxlen: 80, nomen: true, todo: true */
-/*global window, module, test, ok, stop, start, asyncTest,
+/*global window, module, test, ok, stop, start, asyncTest, expect, MouseEvent,
   request, declare, console, document, require, QUnit, deepEqual */
 (function (Promise) {
   "use strict";
@@ -55,6 +55,72 @@
       });
     }
 
+    /**
+     * Test event bindings for touch, mouse and custom events. At this test
+     * without wrapping inside a promise (below)
+     * not parse out of the box.
+     * @method  testStartListenTo
+     * @returns {Promise} A promise
+     */
+    function testStartListenTo() {
+      return asyncTest("startListenTo method", function () {
+
+        expect(6);
+
+        return request([
+          {"name": "util", "src": "../src/clapp.util.js"}
+        ]).spread(function (util) {
+          var button;
+
+          function dispatchDefaultEvent(my_target, my_type) {
+            var evt_mouse, doc = document;
+
+            if (doc.createEvent) {
+              evt_mouse = new MouseEvent(my_type, {
+                'view': window,
+                'bubbles': true,
+                'cancelable': true
+              });
+              my_target.dispatchEvent(evt_mouse);
+            } else {
+              evt_mouse = doc.createEventObject();
+              my_target.fireEvent('on' + my_type, evt_mouse);
+            }
+          }
+
+          function clickCallback(my_event) {
+            ok(true, "event triggered");
+            ok(my_event.type === "click", "correct event detected");
+          }
+
+          function touchCallback(my_event) {
+            ok(true, "event triggered");
+            ok(my_event.type === "touchstart", "correct event detected");
+          }
+
+          button = document.createElement("button");
+
+          // http://mzl.la/1APSl8U
+          util.startListenTo(button, "click", clickCallback);
+          dispatchDefaultEvent(button, "click");
+
+          // https://developer.mozilla.org/en-US/docs/Web/API/TouchEvent
+          util.startListenTo(button, "touchstart", touchCallback);
+          dispatchDefaultEvent(button, "touchstart");
+          dispatchDefaultEvent(button, "click");
+
+          start();
+        });
+      });
+    }
+
+    /**
+     * Test event unbinding for touch, mouse and custom events (no promise)
+     * @method  testStopListenTo
+     * @param   {Object}  my_button   Button used in previous step
+     * @returns {Promise} A promise
+     */
+
     // ============================= API =====================================
     test_util.runner = function () {
 
@@ -63,8 +129,8 @@
       return Promise
         .delay(10)
         .then(testUtilParse)
-        .then(testUtilUuid);
-        //.then(testStartListenTo)
+        .then(testUtilUuid)
+        .then(testStartListenTo);
         //.then(testStopListenTo)
         //.then(testError)
         //.then(testAjax)
