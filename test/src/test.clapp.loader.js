@@ -253,87 +253,138 @@
     }
 
     /**
-     * Test shimming of external dependencies (not using declare). This is
-     * loading jQuery, jQuery Mobile (with CSS), i18next and jIO with each
-     * using a different module testing syntax
+     * Test shimming of external dependencies (not using declare). Load 3rd
+     * party modules with different AMD testing syntax to make sure all cases
+     * pass.
      * @method    testShimExternalDependencies
      * @returns   {Promise} A promise
      */
     function testShimExternalDependencies() {
       return asyncTest("Load and shim external dependencies", function () {
 
-        // load jquery
+        // ----------------------------------------------------------------
+
+        // module jQuery
+        // > module & exports = object > factory
+        // > or set as global
+        // get
         function getJquery() {
           return request([{
             "name": "jquery",
-            "src": "js-test-files/jquery/jquery-1.11.0.js",
-            "shim": true,
-            "named": true
+            "src": "js-test-files/jquery-1.11.0.js",
+            "shim": true
           }]);
         }
 
-        // run jquery tests
+        // test
         function testJquery($mod) {
           var div = $mod(document).find("div").eq(0)[0].tagName;
 
-          ok($mod !== undefined, "jQuery - List of modules returned.");
-          ok(window.$ === undefined, "jQuery - not set as a global.");
-          ok(typeof $mod === "function", "jQuery - returned as module.");
-          ok($mod(document).length === 1, "jQuery - $(document) works.");
-          ok(div === "DIV", "Random jQuery methods (find, eq) work.");
+          ok($mod !== undefined, "setup jQuery - Modules returned.");
+          ok(window.$ === undefined, "setup jQuery - not set as a global.");
+          ok(typeof $mod === "function", "setup jQuery - returned as module.");
+          ok($mod(document).length === 1, "setup jQuery - $(document) works.");
+          ok(div === "DIV", "setup jQuery Random methods (find, eq) work.");
         }
 
-        // get plugin "jio", anonymous, with sub dependencies
+        // ----------------------------------------------------------------
+
+        // module jio
+        // > define & define.amd > define([deps], module)
+        // > or set as module
+        // get
         function getJIO() {
           return request([
-            {"name": "storage", "src": "js-test-files/jio/jio.js", "shim": true}
+            {"name": "storage", "src": "js-test-files/jio.js", "shim": true}
           ]);
         }
 
-        // test jio
+        // test
         function testJIO(jIO) {
           ok(jIO !== undefined, "jIO - List of modules returned.");
           ok(window.jIO === undefined, "jIO - Module is not set as a global");
           ok(typeof jIO.createJIO === "function", "jiO - Methods available");
-          // fails here randomly
           ok(jIO.hex_sha256 !== undefined, "jIO - Dependencies available");
         }
 
-        // get plugin i18n, anonymous
-        function getI18n() {
+        // ----------------------------------------------------------------
+
+        // module i18n, testing
+        // > exports = object > module.exports = factory
+        // > define & define.amd > call define(factory)
+        // get
+        function getSetup_i18n() {
           return request([{
-            "name": "i18n",
-            "src": "js-test-files/i18next/i18next.amd-1.7.3.js",
+            "name": "setup_i18n",
+            "src": "js-test-files/i18next.js",
             "shim": true
           }]);
         }
 
-        // test i18n
-        function testI18n(i18n) {
-          ok(i18n !== undefined, "i18n - List of modules returned.");
-          ok(window.i18n === undefined, "i18n - not set as a global");
-          ok(typeof i18n.t === "function", "i18n - Methods accessible");
+        // test
+        function testSetup_i18n(i18n) {
+          ok(i18n !== undefined, "setup_i18n - Modules returned.");
+          ok(window.i18n === undefined, "setup_i18n - Not a global");
+          ok(typeof i18n.t === "function", "setup_i18n - Method avaialable");
         }
 
-        // get jQuery Mobile
+        // ----------------------------------------------------------------
+
+        // module jquery mobile, testing
+        // > get JS and CSS, load jquery internally
+        // > define & define.amd > call define(with internal dep)
+        // get jQuery Mobile which will load jQuery from location #2
         function getJQM() {
           return request([{
             "name": "mobile",
-            "src": "js-test-files/jquery-mobile/jquery-mobile.latest.js",
+            "src": "js-test-files/jquery-mobile.latest.js",
             "shim": true
           }, {
             "name": "mobile_css",
-            "src": "js-test-files/jquery-mobile/jquery-mobile.latest.css"
+            "src": "js-test-files/jquery-mobile.latest.css"
           }]);
         }
 
         // test jQuery Mobile
         function testJQM(mobile) {
           mobile.autoInitializePage = false;
+          mobile.hashListeningEnabled = false;
+          mobile.pushStateEnabled = false;
+          mobile.ajaxEnabled = false;
 
           ok(mobile !== undefined, "List of modules returned.");
-          ok(window.$ === undefined, "jQuery not set as global");
+          ok(window.$ === undefined, "jQuery still not set as global");
           ok(mobile.version !== undefined, "Properties accessible");
+        }
+
+        // ----------------------------------------------------------------
+
+        // get uri plugin, which exports to require
+        function getURI() {
+          return request([{
+            "name": "uri",
+            "src": "js-test-files/uri.js",
+            "shim": true
+          }]);
+        }
+
+        function testURI(uri) {
+          var puny, ipv6, second_level;
+
+          puny = document.querySelectorAll(
+            "script[src='js-test-files/punycode.js']"
+          );
+          ipv6 = document.querySelectorAll(
+            "script[src='js-test-files/IPv6.js']"
+          );
+          second_level = document.querySelectorAll(
+            "script[src='js-test-files/SecondLevelDomains.js']"
+          );
+
+          ok(uri !== undefined, "Module correctly returned");
+          ok(puny !== undefined, "Submodule 1 fetched correctly");
+          ok(ipv6 !== undefined, "Submodule 2 fetched correctly");
+          ok(second_level !== undefined, "Submodule 3 fetched correctly");
 
           start();
         }
@@ -342,10 +393,12 @@
           .spread(testJquery)
           .then(getJIO)
           .spread(testJIO)
-          .then(getI18n)
-          .spread(testI18n)
+          .then(getSetup_i18n)
+          .spread(testSetup_i18n)
           .then(getJQM)
-          .spread(testJQM);
+          .spread(testJQM)
+          .then(getURI)
+          .spread(testURI);
       });
     }
 

@@ -2,3 +2,6 @@
 .ui-mobile-rendering > body {
   visibility: visible;
 }
+.test-message {}
+.test-source {}
+.result {}
