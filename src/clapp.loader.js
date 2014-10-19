@@ -127,7 +127,7 @@ var declare, request;
     // once here, we need to re-route require calls into request
     module_list = mangleArguments(args[0]);
     callback = args[1];
-    base_path = retrieveBasePath(list).split('/')[0] + '/';
+    base_path = retrieveBasePath(list).split('/').slice(0, -1).join('/') + '/';
 
     // WARNING: assume the whole application does not use require base path!
     // WARNING: assume sub dependencies are in the same folder
