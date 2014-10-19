@@ -85,8 +85,65 @@ var declare, request;
 
     return {
       "name": name,
-      "callback": clappjs.callback_dict[name] || shim
+      "callback": Promise.resolve(clappjs.callback_dict[name] || shim)
     };
+  }
+
+  /**
+   * Called as a wrapper around require in case a 3rd party plugin calls its
+   * dependenies via require. Depends on structure of module check. Checking
+   * for exports first is covered via shimDefine, checking for require here.
+   * @method  shimRequire
+   * @param   {Array}  Arguments
+   * @returns {Array}  arguments
+   */
+  function shimRequire() {
+    var sync, callback, list, i, len, name, src, module_list, base_path, args,
+      current_dict;
+
+    args = arguments;
+    sync = clappjs.sync_require;
+    list = clappjs.shim_list;
+
+    // WARNING: assuming that queued items mean require was called inside
+    // a clappjs request/declare call. Seems to work.
+    if (sync && list.length === 0) {
+      return sync.apply(null, args);
+    }
+
+    // always convert to array
+    function mangleArguments(my_name) {
+      if (typeof my_name === "string") {
+        return [my_name];
+      }
+      return my_name;
+    }
+
+    // first module on queue should indicate base path. another punt.
+    function retrieveBasePath(my_list) {
+      return clappjs.path_dict[my_list[0]] || '';
+    }
+
+    // once here, we need to re-route require calls into request
+    module_list = mangleArguments(args[0]);
+    callback = args[1];
+    base_path = retrieveBasePath(list).split('/')[0] + '/';
+
+    // WARNING: assume the whole application does not use require base path!
+    // WARNING: assume sub dependencies are in the same folder
+    for (i = 0, len = module_list.length; i < len; i += 1) {
+      name = module_list[i];
+      current_dict = name.split('./');
+      src = base_path + (current_dict[1] || current_dict[0]).split('.js')[0];
+      module_list[i] = {"name": name, "src": src + '.js', "shim": true};
+    }
+
+    return request(module_list)
+      .then(function (response_list) {
+        if (callback) {
+          return callback.apply(null, response_list);
+        }
+      });
   }
 
   /**
@@ -98,14 +155,13 @@ var declare, request;
    * @returns {Array}  arguments
    */
   function shimDefine() {
-    var args, list, sync, name, index, deps, named, callback, pretty_deps;
+    var sync, args, list, name, index, deps, callback, pretty_deps;
 
     // add this module to clappjs internal structure
     function shimDeclare(my_name, my_index, my_deps, my_pretty_deps, my_cb) {
       clappjs.shim_list.splice(my_index, 1);
-      clappjs.named_module_list.splice(my_index, 1);
       clappjs.dependency_dict[my_name] = my_pretty_deps || null;
-      declare(my_name, my_deps, my_cb);
+      return declare(my_name, my_deps, my_cb);
     }
 
     // shim-module which tries to load it's dependencies must also be shimmed
@@ -116,48 +172,41 @@ var declare, request;
       };
     }
 
-    // check whether a shim_list(ed) module is on the loading queue.If so,
-    // it should not be regarded when evaluating whether to pass a call
-    // through to the original define.
-    function testWhetherNamed(my_counter, my_module) {
-      if (clappjs.named_module_list.indexOf(my_module) > -1 &&
-          name !== my_module) {
-        my_counter += 1;
-      }
-      return my_counter;
-    }
-
+    // NOTE: here, name will be the first argument (string, array or method)
+    args = arguments;
+    name = args[0];
     list = clappjs.shim_list;
     sync = clappjs.sync_define;
-    named = list.reduce(testWhetherNamed, 0);
 
-    // try to catch direct calls from requirejs. Make sure the list of shim
-    // calls is empty or does not contain any named moduled. This is still
-    // unreliable
-
-    // return out
-    if (sync && list.length - named === 0) {
-      return sync.apply(null, arguments);
+    // same logic as shim_require, if define is called while clappjs is
+    // processing a module, the define calls should be internal dependencies
+    // of the module processed. Call define normally, unless the module being
+    // loaded is named and defines itself (currently on jQuery). Punt again...
+    if (sync && (list.length === 0 || list.indexOf(name) > -1)) {
+      return clappjs.sync_define.apply(null, args);
     }
 
-    // WARNING: IE8 indexOf/map/reduce - http://bit.ly/1mgMCUy
-    // WARNING: reverting earlier also reverts arguments and breaks define
-    args = revert(arguments);
+    // WARNING: also reverts arguments. Must call original define before!
+    args = revert(args);
     name = args[2];
     callback = args[0];
+    deps = args[1] || [];
+    pretty_deps = deps.map(shimDependencies);
     index = list.indexOf(name);
-    deps = args[1];
-    pretty_deps = args[1].map(shimDependencies);
 
     // named modules, easy to solve
     if (index > -1 && name) {
       shimDeclare(name, index, pretty_deps, deps, callback);
     }
 
-    // single anonymous dependency can be solved, too
-    if (!name && list.length === 1) {
+    // single anonymous dependency can be solved, too. In case there are
+    // more than one, we always return the first dependency in line.
+    // WARNING: punting
+    if (!name && list.length >= 1) {
       shimDeclare(list[0], 0, pretty_deps, deps, callback);
     }
+
+    return;
   }
 
   /**
@@ -175,29 +224,30 @@ var declare, request;
     }
 
     name = conf.name;
-
     clappjs.path_dict[name] = conf.src || null;
 
-    // compatablity sigh...
+    // opening pandoras box... sigh...
     if (conf.shim) {
-      if (!clappjs.shim_list) {
+      if (clappjs.shim_list === undefined) {
         clappjs.shim_list = [];
-        clappjs.named_module_list = [];
+
+        if (window.require) {
+          clappjs.sync_require = window.require;
+        }
         if (window.define) {
           clappjs.sync_define = window.define;
         }
+        window.require = shimRequire;
         window.define = shimDefine;
+
+        // jQuery wants this
+        window.define.amd = window.define.amd || {};
+
+        // fake exports
         window.module = {"exports": {}};
         window.exports = window.module.exports;
-        window.define.amd = window.define.amd || {};
       }
       clappjs.shim_list.push(name);
-
-      // non-anonymous modules need to be labelled to not count against
-      // shim_list
-      if (conf.named) {
-        clappjs.named_module_list.push(name);
-      }
     }
 
     return name;
@@ -346,7 +396,6 @@ var declare, request;
       } else if (is_on_queue) {
         promise_list[i] = passOutResolve(mod, is_on_queue);
       } else {
-
         // punt for path...
         path =  clappjs.path_dict[mod] || trace(mod) || "js/" + mod + ".js";
 
