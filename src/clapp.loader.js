@@ -93,13 +93,15 @@ var declare, request;
    * Called as a wrapper around require in case a 3rd party plugin calls its
    * dependenies via require. Depends on structure of module check. Checking
    * for exports first is covered via shimDefine, checking for require here.
+   * Still missing a good way to associate anonymous require calls from
+   * inside 3rd party plugins to the plugin calling require. Makes it hard
+   * to determine the correct path for sub-dependencies using "./dep.js"
    * @method  shimRequire
    * @param   {Array}  Arguments
    * @returns {Array}  arguments
    */
   function shimRequire() {
-    var sync, callback, list, i, len, name, src, module_list, base_path, args,
-      current_dict;
+    var sync, callback, list, i, len, module_list, args;
 
     args = arguments;
     sync = clappjs.sync_require;
@@ -119,31 +121,19 @@ var declare, request;
       return my_name;
     }
 
-    // first module on queue should indicate base path. another punt.
-    function retrieveBasePath(my_list) {
-      return clappjs.path_dict[my_list[0]] || '';
-    }
-
-    // once here, we need to re-route require calls into request
     module_list = mangleArguments(args[0]);
     callback = args[1];
-    base_path = retrieveBasePath(list).split('/').slice(0, -1).join('/') + '/';
 
-    // WARNING: assume the whole application does not use require base path!
-    // WARNING: assume sub dependencies are in the same folder
+    // NOTE: done, no requests will be made here!
+    // because as multiple file could be loaded, there is no way to determine
+    // the origin and path of this require call. Instead waiting for onload
+    // and resolving the untraced_list 
     for (i = 0, len = module_list.length; i < len; i += 1) {
-      name = module_list[i];
-      current_dict = name.split('./');
-      src = base_path + (current_dict[1] || current_dict[0]).split('.js')[0];
-      module_list[i] = {"name": name, "src": src + '.js', "shim": true};
-    }
-
-    return request(module_list)
-      .then(function (response_list) {
-        if (callback) {
-          return callback.apply(null, response_list);
-        }
+      clappjs.untraced_list.push({
+        "name": module_list[i],
+        "callback": callback
       });
+    }
   }
 
   /**
@@ -155,14 +145,7 @@ var declare, request;
    * @returns {Array}  arguments
    */
   function shimDefine() {
-    var sync, args, list, name, index, deps, callback, pretty_deps;
-
-    // add this module to clappjs internal structure
-    function shimDeclare(my_name, my_index, my_deps, my_pretty_deps, my_cb) {
-      clappjs.shim_list.splice(my_index, 1);
-      clappjs.dependency_dict[my_name] = my_pretty_deps || null;
-      return declare(my_name, my_deps, my_cb);
-    }
+    var sync, args, list, name, index, deps, callback, i, len;
 
     // shim-module which tries to load it's dependencies must also be shimmed
     function shimDependencies(my_element) {
@@ -178,7 +161,7 @@ var declare, request;
     list = clappjs.shim_list;
     sync = clappjs.sync_define;
 
-    // same logic as shim_require, if define is called while clappjs is
+    // same logic as shimRequire, if define is called while clappjs is
     // processing a module, the define calls should be internal dependencies
     // of the module processed. Call define normally, unless the module being
     // loaded is named and defines itself (currently on jQuery). Punt again...
@@ -186,35 +169,35 @@ var declare, request;
       return clappjs.sync_define.apply(null, args);
     }
 
-    // WARNING: also reverts arguments. Must call original define before!
+    // WARNING: Before reverting arguments, original define must be called!
     args = revert(args);
     name = args[2];
     callback = args[0];
     deps = args[1] || [];
-    pretty_deps = deps.map(shimDependencies);
     index = list.indexOf(name);
 
-    // named modules, easy to solve
+    // named modules, easy to solve ... just for jQuery
     if (index > -1 && name) {
-      shimDeclare(name, index, pretty_deps, deps, callback);
+      clappjs.dependency_dict[name] = deps.map(shimDependencies) || null;
+      return declare(name, deps, callback);
     }
 
-    // single anonymous dependency can be solved, too. In case there are
-    // more than one, we always return the first dependency in line.
-    // WARNING: punting
-    if (!name && list.length >= 1) {
-      shimDeclare(list[0], 0, pretty_deps, deps, callback);
+    // also handle through untraced_list to correctly associate like in
+    // shimRequire
+    for (i = 0, len = deps.length; i < len; i += 1) {
+      clappjs.untraced_list.push({
+        "name": deps[i],
+        "callback": callback
+      });
     }
-
-    return;
   }
 
   /**
    * Digest module definition in case it is provided and allow loading regular
    * modules through declare/request without breaking loaders such as require
-   * @method  digestModuleSpec
-   * @param   {String/Object} spec  Module (spec) to load
-   * @return  {String}    module name
+   * @method    digestModuleSpec
+   * @param     {String/Object} spec  Module (spec) to load
+   * @return    {String}    module name
    */
   function digestModuleSpec(conf) {
     var name;
@@ -227,9 +210,11 @@ var declare, request;
     clappjs.path_dict[name] = conf.src || null;
 
     // opening pandoras box... sigh...
+    // TODO: kill if-else-ing...
     if (conf.shim) {
       if (clappjs.shim_list === undefined) {
         clappjs.shim_list = [];
+        clappjs.untraced_list = [];
 
         if (window.require) {
           clappjs.sync_require = window.require;
@@ -256,48 +241,94 @@ var declare, request;
   /**
    * Establish a loading order based on an array of passed modules to load,
    * testing for dependencies recursively and generating bundles of files
-   * to load, for example:
-   * NOTE: remove? - if dependencies are not stored upfront this won't work!
+   * to load
+   * TODO: too complicated. Drop! If dependencies are not specified, works?
    * @method  setLoadingOrder
    * @param   {Array}   module_list   List of modules to list
    * @param   {Array}   bundle_list   Response being assembled
    * @returns {Array}   finished bundle_list
    */
   function setLoadingOrder(module_list, bundle_list) {
-    var mod, len, dependency_list, i, position, base, name;
+    var len, dependency_list, i, base, name, current, next;
 
     bundle_list = bundle_list || [];
 
     for (i = 0, len = module_list.length; i < len; i += 1) {
-      bundle_list[0] = bundle_list[0] || {"recursion": 0};
+
+      // pass a level counter through the recursive call
+      bundle_list[0] = bundle_list[0] || {"level": 0};
       base = bundle_list[0];
-      mod = module_list[i];
-      name = digestModuleSpec(mod);
+      current = base.level;
+      next = current + 1;
+      name = digestModuleSpec(module_list[i]);
       dependency_list = clappjs.dependency_dict[name];
 
-      // no dependency, time to push
+      // no dependency, add module to first bundle (on position 2)
       if (!dependency_list) {
         bundle_list[1] = bundle_list[1] || [];
         bundle_list[1].push(name);
-        base.lowest = base.recursion;
       } else {
-
-        // dependencies > recurse over dependencies
-        base.recursion += 1;
+        // dependencies > call setLoading Order on dependencies
+        bundle_list[0].level += 1;
         bundle_list = setLoadingOrder(dependency_list, bundle_list);
-        base.recursion -= 1;
-        position = (base.lowest - base.recursion) + 1;
-        bundle_list[position] = bundle_list[position] || [];
-        bundle_list[position].push(name);
+
+        bundle_list[next] = bundle_list[next] || [];
+        bundle_list[next].push(name);
       }
 
-      // remove recursion/lowest object from array, since we are done
-      if (i === len - 1 && base.recursion === 0) {
+      // remove level object from array, since we are done
+      if (i === len - 1 && base.level === 0) {
         bundle_list.shift();
       }
     }
 
     return bundle_list;
+  }
+
+
+  /**
+   * Associate shimmed subdepencies with the latest module triggering
+   * onload to try and have some logic for handling require calls made from
+   * a 3rd party shimmed plugin
+   * @method    solvePendingSubdependencies
+   * @param     {String}    my_name   Module triggering onload
+   * @returns   {Promise}   A promise
+   */
+  function solvePendingSubdependencies(my_name) {
+    var i, len, trace, path, request_list, callback, origin, base,
+      config;
+
+    base = clappjs.path_dict[my_name];
+    clappjs.dependency_dict[my_name] = clappjs.dependency_dict[my_name] || [];
+
+    if ((clappjs.shim_list || []).indexOf(my_name) > -1 && base !== null) {
+      request_list = [];
+      path = base.split('/').slice(0, -1).join('/');
+
+      for (i = 0, len = clappjs.untraced_list.length; i < len; i += 1) {
+
+        // NOTE: callback not handled well, find better way to store once!
+        trace = clappjs.untraced_list[i];
+        callback = trace.callback;
+        origin = trace.name.split('./');
+        config = {
+          "name": trace.name,
+          "shim": true,
+          "src": path + '/' + (origin[1] || origin[0]).split('.js')[0] + '.js'
+        };
+        request_list.push(config);
+        clappjs.dependency_dict[my_name].push(config);
+      }
+
+      // clear the list
+      clappjs.untraced_list = [];
+
+      if (clappjs.callback_dict[my_name] || callback === undefined) {
+        return request(request_list);
+      }
+      declare(my_name, request_list, callback);
+    }
+    return Promise.resolve();
   }
 
   /**
@@ -316,7 +347,10 @@ var declare, request;
       new Promise(function (resolve, reject) {
         element.onload = function () {
           delete clappjs.queue_dict[name];
-          resolve(returnModule(name));
+          return solvePendingSubdependencies(name)
+            .then(function () {
+              return resolve(returnModule(name));
+            });
         };
         element.onerror = function (e) {
           reject(e);
