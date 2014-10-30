@@ -355,6 +355,7 @@
           ok(mobile !== undefined, "List of modules returned.");
           ok(window.$ === undefined, "jQuery still not set as global");
           ok(mobile.version !== undefined, "Properties accessible");
+
         }
 
         // ----------------------------------------------------------------
@@ -363,12 +364,19 @@
         function getURI() {
           return request([{
             "name": "uri",
-            "src": "js-test-files/uri.js",
+            "src": "../lib/uri/uri.js",
+            "shim": true
+          }, {
+            "name": "util",
+            "src": "../lib/src/util.js"
+          }, {
+            "name": "template",
+            "src": "../lib/uritemplate/uritemplate.js",
             "shim": true
           }]);
         }
 
-        function testURI(uri) {
+        function testURI(uri, util, template) {
           var puny, ipv6, second_level;
 
           puny = document.querySelectorAll(
@@ -382,6 +390,8 @@
           );
 
           ok(uri !== undefined, "Module correctly returned");
+          ok(util !== undefined, "Module correctly returned");
+          ok(template !== undefined, "Module correctly returned");
           ok(puny !== undefined, "Submodule 1 fetched correctly");
           ok(ipv6 !== undefined, "Submodule 2 fetched correctly");
           ok(second_level !== undefined, "Submodule 3 fetched correctly");
