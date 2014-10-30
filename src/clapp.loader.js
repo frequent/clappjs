@@ -195,6 +195,7 @@ var declare, request;
       return conf;
     }
 
+    // pandoras box...
     if (clappjs.shimmed === undefined) {
       clappjs.shimmed = true;
       if (window.require) {
@@ -330,6 +331,10 @@ var declare, request;
     // set on queue to prevent multiple calls in same batch
     resolver = clappjs.queue_dict[name] = clappjs.queue_dict[name] ||
       new Promise(function (resolve, reject) {
+
+        // TODO: chain breaker, wrap properly into promiseEventListener!
+        // TODO: remove properly once loaded
+        // TODO: do the requirejs dance of opera and IE
         element.onload = function () {
           delete clappjs.queue_dict[name];
           return solvePendingSubdependencies(name)
