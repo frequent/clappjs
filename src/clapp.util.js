@@ -1,6 +1,7 @@
 /*jslint indent: 2, maxlen: 80, nomen: true, todo: true */
-/*global console, Promise, FileReader, declare, XMLHttpRequest, window */
-(function (Promise, FileReader) {
+/*global console, Promise, FileReader, declare, XMLHttpRequest, window,
+  document */
+(function (Promise, FileReader, document) {
   "use strict";
 
   /* ====================================================================== */
@@ -20,33 +21,32 @@
      * global error handler
      * thx: renderJS - http://bit.ly/1zSQQX5
      * @method    error
-     * @param     {Object}    e   Error object
+     * @param     {Object}    my_error   Error object
      */
     // TODO: log where?
-    util.error = function (e) {
-      if (e.constructor === XMLHttpRequest) {
-        console.error(e);
-
-        e = {
-          readyState: e.readyState,
-          status: e.status,
-          statusText: e.statusText,
-          response_headers: e.getAllResponseHeaders()
+    util.error = function (my_error) {
+      switch (my_error.constructor) {
+      case "XMLHttpRequest":
+        my_error = {
+          readyState: my_error.readyState,
+          status: my_error.status,
+          statusText: my_error.statusText,
+          response_headers: my_error.getAllResponseHeaders()
         };
-      }
-
-      if (e.constructor === Array ||
-          e.constructor === String ||
-          e.constructor === Object) {
+        break;
+      case "Array":
+      case "String":
+      case "Object":
         try {
-          e = JSON.stringify(e);
+          my_error = JSON.stringify(my_error);
         } catch (exception) {
           console.error(exception);
         }
+        break;
       }
 
-      console.warn(e);
-      //document.getElementsByTagName('body')[0].textContent = e;
+      console.warn(my_error);
+      document.getElementsByTagName('body')[0].textContent = my_error;
     };
 
     /**
@@ -75,6 +75,25 @@
         return JSON.parse(data);
       }
       return data;
+    };
+
+    /**
+     * retrieve a query parameter from the url
+     * @method  getUrlQueryParam
+     * @param   {String}    my_param  Parameter to retrieve
+     * @returns {String}    value of parameter or undefined
+     */
+    util.getUrlQueryParam = function (my_param) {
+      var url_array, i, len, param_array;
+
+      url_array = window.location.search.substr(1).split('&');
+
+      for (i = 0, len = url_array.length; i < len; i += 1) {
+        param_array = url_array[i].split("=");
+        if (decodeURIComponent(param_array[0]) === my_param) {
+          return decodeURIComponent(param_array[1].replace(/\+/g, " "));
+        }
+      }
     };
 
     /**
@@ -348,4 +367,4 @@
     return util;
   });
 
-}(Promise, FileReader));
+}(Promise, FileReader, document));
