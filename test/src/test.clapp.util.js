@@ -64,7 +64,6 @@
      */
     function testStartListenTo() {
       return asyncTest("startListenTo method", function () {
-
         expect(6);
 
         return request([
@@ -76,11 +75,8 @@
             var evt_mouse, doc = document;
 
             if (doc.createEvent) {
-              evt_mouse = new MouseEvent(my_type, {
-                'view': window,
-                'bubbles': true,
-                'cancelable': true
-              });
+              evt_mouse = doc.createEvent("HTMLEvents");
+              evt_mouse.initEvent('click', true, true);
               my_target.dispatchEvent(evt_mouse);
             } else {
               evt_mouse = doc.createEventObject();
