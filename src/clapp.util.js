@@ -18,6 +18,29 @@
     var util = {};
 
     /**
+     * Property type detection.
+     * thx: http://requirejs.org/docs/release/2.1.15/comments/require.js
+     * thx: https://github.com/fxa/uritemplate-js
+     * @method  typeOf
+     * @param   {[any]}   my_value Object|String|Function|Array|Boolean|Number
+     * @param   {String}  my_type   Type to test for
+     * @returns {Boolean} true/undefined
+     */
+    util.typeOf = function (my_value, my_type) {
+
+      // handle switch 
+      if (my_type === undefined) {
+        return Object.prototype.toString.call(my_value);
+      }
+
+      // handle single tests
+      if (Object.prototype.toString.call(my_value) ===
+        '[object ' + my_type + ']') {
+          return true;
+      }
+    }
+
+    /**
      * global error handler
      * thx: renderJS - http://bit.ly/1zSQQX5
      * @method    error
@@ -71,29 +94,10 @@
      * @return  {Object} Parsed object
      */
     util.parse = function (data) {
-      if (typeof data === "string") {
+      if (util.typeOf(data, 'String')) {
         return JSON.parse(data);
       }
       return data;
-    };
-
-    /**
-     * retrieve a query parameter from the url
-     * @method  getUrlQueryParam
-     * @param   {String}    my_param  Parameter to retrieve
-     * @returns {String}    value of parameter or undefined
-     */
-    util.getUrlQueryParam = function (my_param) {
-      var url_array, i, len, param_array;
-
-      url_array = window.location.search.substr(1).split('&');
-
-      for (i = 0, len = url_array.length; i < len; i += 1) {
-        param_array = url_array[i].split("=");
-        if (decodeURIComponent(param_array[0]) === my_param) {
-          return decodeURIComponent(param_array[1].replace(/\+/g, " "));
-        }
-      }
     };
 
     /**
@@ -179,7 +183,7 @@
         //xhr.withCredentials = true;
         xhr.open(my_param.type || "GET", my_param.url, true);
 
-        if (typeof my_param.beforeSend === 'function') {
+        if (util.typeOf(my_param.beforeSend, 'Function')) {
           my_param.beforeSend(xhr);
         }
 
@@ -253,7 +257,7 @@
 
       function cancelResolver() {
         if ((callback_promise !== undefined) &&
-            (typeof callback_promise.cancel === 'function')) {
+            (util.typeOf(callback_promise.cancel, 'Function')) {
           callback_promise.cancel();
         }
       }
@@ -363,7 +367,7 @@
         reader.readAsText(file);
       });
     };
-
+    window.util = util;
     return util;
   });
 
