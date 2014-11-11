@@ -38,7 +38,7 @@
         '[object ' + my_type + ']') {
           return true;
       }
-    }
+    };
 
     /**
      * global error handler
@@ -256,8 +256,8 @@
       var event_callback, callback_promise;
 
       function cancelResolver() {
-        if ((callback_promise !== undefined) &&
-            (util.typeOf(callback_promise.cancel, 'Function')) {
+        if (callback_promise !== undefined &&
+            util.typeOf(callback_promise.cancel, 'Function')) {
           callback_promise.cancel();
         }
       }
