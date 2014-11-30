@@ -18,6 +18,24 @@
     var util = {};
 
     /**
+     * Extend an object with another object
+     * @method  extend
+     * @param   {Object}  my_base_dict    Base object
+     * @param   {Object}  my_extend_dict  Extension object
+     * @returns {Object}  extended object
+     */
+    util.extend = function (my_base_dict, my_extended_dict) {
+      var param;
+
+      for (param in my_extended_dict) {
+        if (my_extended_dict.hasOwnProperty(param)) {
+          my_base_dict[param] = my_extended_dict[param];
+        }
+      }
+      return my_base_dict;
+    }
+
+    /**
      * Property type detection.
      * thx: http://requirejs.org/docs/release/2.1.15/comments/require.js
      * thx: https://github.com/fxa/uritemplate-js
@@ -367,7 +385,7 @@
         reader.readAsText(file);
       });
     };
-    window.util = util;
+
     return util;
   });
 
