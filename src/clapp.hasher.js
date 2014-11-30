@@ -92,19 +92,20 @@
   }
 
   /**
-    * Serialize a urn object into an bookmarkable URL
+    * Serialize urn fragment
     * @method  serializeKeyString
     * @param   {Object}  my_urn_dict    urn object to convert to URL
+    * @param   {Object}   my_utilities_dict
     * @returns {String}  URL string component
     */
-  function serializeKeyString(my_urn_dict) {
+  function serializeKeyString(my_urn_dict, my_utilities_dict) {
     var hash_param_list, key;
 
     // handles foo | [foo, bar] | [[foo, bar],[baz, bam]]
     function recurse(my_key, my_val) {
       var i, len, param_list;
 
-      if (util.typeOf(my_val, 'Array')) {
+      if (my_utilities_dict.typeOf(my_val, 'Array')) {
         param_list = [];
         for (i = 0, len = my_val.length; i < len; i += 1) {
           param_list.push(
@@ -122,34 +123,35 @@
         hash_param_list.concat(recurse(key, my_urn_dict[key]));
       }
     }
-    return hash_param_list.join(encode("&"));
+    return hash_param_list.join("&");
   }
 
   /**
     * Serialize a urn object into an bookmarkable URL
     * @method  serializeUrn
-    * @param   {Object}  my_urn_list    urn object to convert to URL
-    * @returns {String}  URL to lookup
+    * @param   {Object}   my_urn_list    urn object to convert to URL
+    * @param   {Object}   my_utilities_dict
+    * @returns {String}   URL to lookup
     */
-  function serializeUrn(my_urn_list) {
+  function serializeUrn(my_urn_list, my_utilities_dict) {
     var i, len, str, key_list;
 
     str = "#!";
     key_list = [];
     for (i = 0, len = my_urn_list.length; i < len; i += 1) {
-      key_list.push(serializeKeyString(my_urn_list[i]));
+      key_list.push(serializeKeyString(my_urn_list[i]), my_utilities_dict);
     }
     return str + key_list.join(encode("&"));
   }
 
   /**
-   * Resolve a mangled url into an URN object
-   * @method resolveUrn
+   * Resolve link with known parameters before passing it back
+   * @method resolveLink
    * @param   {String}  my_mangled_urn   urn string to resolve
    * @param   {Object}  my_hate_response full response object
    * @returns {String}  resolved link
    */
-  function convertLink(my_uri, my_hate_response) {
+  function resolveLink(my_uri, my_hate_response) {
     var bracket_list, i, len, bracket, uri;
 
     /* prelim API:
@@ -195,13 +197,14 @@
    * Convert all links in a hate response to bookmarkable links
    * @method  resolveHateResponse
    * @param   {Object}  my_hate_response  Generated hate response object
+   * @param   {Object}  my_utilities_dict
    * @returns {Object}  same object with all links resolved
    */
-  function resolveHateResponse(my_hate_response) {
+  function resolveHateResponse(my_hate_response, my_utilities_dict) {
 
     // strings will be skipped here, links resolved in resolveObject
     function testType(my_element) {
-      switch (util.typeOf(my_element)) {
+      switch (my_utilities_dict.typeOf(my_element)) {
         case '[object Array]':
           resolveArray(my_element);
           break;
@@ -225,7 +228,7 @@
       for (key in my_dict) {
         if (my_dict.hasOwnProperty(key)) {
           if (key === 'href') {
-            my_dict[key] = convertLink(my_dict[key], my_hate_response);
+            my_dict[key] = resolveLink(my_dict[key], my_hate_response);
           } else {
             testType(my_dict[key]);
           }
@@ -258,9 +261,9 @@
           "href": '{base_url}/',
           "name": 'Application Root'
         },
-        "find": {
-          "href": '{base_url}/#!{key:storage_location_module}',
-          "name": 'Fallback Storage Initializer'
+        "fallback": {
+          "href": '{base_url}/#!{key:storage_specification_module}',
+          "name": 'storage_specification'
         }
       };
       this.title = "Restricted Hateoas Polyfill";
@@ -271,7 +274,7 @@
 
   /**
    * =========================================================================
-   *              URL Manager and link parsing  = Navigation
+   *                          EXPOSED METHODS
    * =========================================================================
    */
   declare("hasher", [{
@@ -287,12 +290,6 @@
     "shim": true
   }], function (util, temp, my_uri) {
     var hasher = {};
-
-  /**
-   * =========================================================================
-   *                          EXPOSED METHODS
-   * =========================================================================
-   */
 
     /**
      * retrieve a query parameter from the url looking through all key dicts
@@ -333,9 +330,8 @@
 
       // TODO: add more HATE here
 
-      return Promise.resolve(resolveHateResponse(hate_dict));
+      return Promise.resolve(resolveHateResponse(hate_dict, util));
     };
-
 
     return hasher;
 
