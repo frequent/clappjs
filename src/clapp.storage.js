@@ -12,6 +12,19 @@
   /* ====================================================================== */
 
   /**
+   * Provide default properties vs recreating them on every call
+   * @param   {Object}    default_dict    Default properties object
+   */
+  var default_dict = {
+    "default_select_list": [
+      'portal_type',
+      'base_portal_type',
+      'child_portal_type_list'
+    ],
+    "default_limit": [0,1]
+  };
+
+  /**
    * Retrieve all storage types declared in a storage definition
    * @method  retrieveStorageTypes
    * @param   {Object}  my_storage_definition  Storage definition
