@@ -109,73 +109,6 @@
   }
 
   /**
-   * Retrieve a defintion from storage, try to load as module or from file
-   * @method    fetchDefinition
-   * @param   {Object}  my_storage    Storage to query
-   * @param   {String}  my_type_list  Portal type definitions to fetch
-   * @returns {Object}  portal_type_definition
-   */
-  // NOTE: this will eventually be the only ALLDOCS handler!
-  // TODO: make this more generic! It will only respond, custom foo in caller!
-  function fetchDefinition(my_storage, my_type_list) {
-
-    return my_storage.allDocs({
-      "query": buildQuery({"base": my_type_list}),
-      "select_list": default_dict.select_list,
-      "limit": default_dict.limit
-    })
-    .then(function (my_result) {
-      var i, len, list;
-
-      // wrap chain in a separate method to preserve my_type value
-      function fetchFile(my_type) {
-        var name, src;
-
-        name = 'portal_type_definition' + '_' + my_type;
-        src = 'data/' + name + '.json.js';
-
-        return request([{"name": name, "src": src}])
-          .then(function (my_module_definition) {
-            return my_storage.post(my_module_definition)
-              .then(function () {
-                return my_module_definition;
-              });
-          })
-          .caught(function(my_error) {
-            return my_storage.fallback({"url": src.slice(0, -3)});
-          })
-          .then(function (my_response) {
-            var response = my_storage.parse(my_response.target.responseText);
-            return my_storage.post(response)
-              .then(function () {
-                return response;
-              });
-          })
-          .caught(function (my_fallback_error) {
-            throw my_fallback_error;
-          });
-      }
-
-      list = [];
-
-      // fetch definition from storage || embedded JSON (prod) || disk (dev)
-      if (my_result.data.total_rows === 0) {
-        for (i = 0, len = my_type_list.length; i < len; i += 1) {
-          list.push(fetchFile(my_type_list[i]));
-        }
-        return Promise.all(list);
-      }
-
-      // just extract data, so it's ready to work with
-      for (i = 0, len = my_result.data.total_rows; i < len; i += 1) {
-        list.push(my_result.data.rows[i].data);
-      }
-
-      return list;
-    });
-  }
-
-  /**
    * =========================================================================
    *                          EXPOSED METHODS
    * =========================================================================
@@ -191,6 +124,81 @@
     var storage = {};
 
     /**
+     * Retrieve a defintion from storage, try to load as module or from file
+     * @method  query
+     * @param   {Object}  my_storage      Storage to query
+     * @param   {String}  my_query_dict   Query parameters
+     * @param   {Object}  my_param_dict   Request parameters
+     * @returns {Object}  portal_type_definition
+     */
+    storage.query = function (my_storage, my_query_dict, my_param_dict) {
+
+      return my_storage.allDocs({
+        "query": buildQuery({"base": my_query_dict}),
+        "select_list": default_dict.select_list,
+        "limit": default_dict.limit
+      })
+      .then(function (my_result) {
+        var i, len, list;
+
+        // wrap chain in a separate method to preserve my_type value
+        function fetchFile(my_type) {
+          var name, src, data;
+
+          name = 'portal_type_definition' + '_' + my_type;
+          src = 'data/' + name + '.json.js';
+
+          function loadAsModule(my_spec) {
+            return request(my_spec)
+              .then(function (my_response) {
+                data = my_response;
+                return my_storage.post(data);
+              })
+              .then(function () {
+                return data;
+              })
+              .caught(function() {
+                return loadFromDisk({"url": my_spec[0].src.slice(0, -3)});
+              });
+          }
+
+          function loadFromDisk(my_raw_src) {
+            return jio.util.ajax(my_raw_src)
+              .then(function (my_response) {
+                data = util.parse(my_response.target.responseText);
+                return my_storage.post(data);
+              })
+              .then(function () {
+                return data;
+              });
+          }
+
+          if (storage.is_built) {
+            return loadAsModule([{"name": name, "src": src}]);
+          }
+          return loadFromDisk({"url": src.slice(0, -3)});
+        }
+
+        list = [];
+
+        // fetch definition from storage || embedded JSON (prod) || disk (dev)
+        if (my_result.data.total_rows === 0) {
+          for (i = 0, len = my_query_dict.length; i < len; i += 1) {
+            list.push(fetchFile(my_query_dict[i]));
+          }
+          return Promise.all(list);
+        }
+
+        // just extract data, so it's ready to work with
+        for (i = 0, len = my_result.data.total_rows; i < len; i += 1) {
+          list.push(my_result.data.rows[i].data);
+        }
+
+        return list;
+      });
+    }
+
+    /**
      * Digest a portal type by traversing portal type definitions and
      * collection field types and base fields and importing all into storage
      * @method  digestType
@@ -199,13 +207,13 @@
      * @returns {Object}  my_storage once all data is retrieved
      */
     storage.digestType = function (my_storage, my_type) {
-      var type_list, blocker;
+      var type_list, resolver;
 
       type_list = [];
-      blocker = new Promise(function (resolve) {
+      resolver = new Promise(function (resolve) {
 
         function handler(my_pass_store, my_type_list, my_parent_resolve) {
-          return fetchDefinition(my_pass_store, my_type_list)
+          return storage.query(my_pass_store, my_type_list, {})
             .then(function (my_result_list) {
               var i, len, iter, kids, pending_list, pender;
 
@@ -240,9 +248,14 @@
         return handler(my_storage, [my_type], resolve);
       });
 
-      return blocker
-        .then(function () {
+      return resolver
+        .then(function (my_type_list) {
+          console.log("DONE");
+          console.log(my_type_list);
           // type_list includes all params for querying field types
+          // TODO: now fetch all fields related to this field type but also
+          // test whether the fields could be included in the pt definition?
+          // 
         });
     }
 
@@ -258,8 +271,6 @@
       // need a flux
       return storage.createStorage("flux")
         .then(function (my_storage) {
-          my_storage.fallback = jio.util.ajax;
-          my_storage.parse = util.parse;
           return storage.digestType(my_storage, portal_type);
         })
         .then(function (my_ready_flux) {
