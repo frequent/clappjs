@@ -12,19 +12,6 @@
   /* ====================================================================== */
 
   /**
-   * Provide default properties vs recreating them on every call
-   * @param   {Object}    default_dict    Default properties object
-   */
-  var default_dict = {
-    "default_select_list": [
-      'portal_type',
-      'base_portal_type',
-      'child_portal_type_list'
-    ],
-    "default_limit": [0,1]
-  };
-
-  /**
    * Retrieve all storage types declared in a storage definition
    * @method  retrieveStorageTypes
    * @param   {Object}  my_storage_definition  Storage definition
@@ -77,35 +64,82 @@
   }
 
   /**
+   * Method to run over the query JSON syntax. As it's done multiple times
+   * the double loop and object lookup are done here in a central method
+   * @method    queryIterator
+   * @param     {Object}    my_query_dict     List to iterate over
+   * @param     {Method}    my_callback       Iteration method
+   * @param     {Any}       my_input          Value to digest and pass back
+   * @returns   {Any}       Input value
+   */
+  /*
+  function queryIterator(my_query_dict, my_callback, my_input) {
+    var i, j, k, key, len, block_len, block, section;
+
+    for (i = 0, len = my_query_dict.length; i < len; i += 1) {
+      block = my_query_dict[i];
+      for (j = 0, block_len = block.length; j < block_len; j += 1) {
+        section = block[j];
+        for (k in section) {
+          if (section.hasOwnProperty(k)) {
+            my_input = my_callback(k, section[k], my_input);
+          }
+        }
+      }
+    }
+
+    return my_input;
+  }
+  */
+
+  /**
    * Build a qury string from parameters passed
+   * First pass at an API:
+   *  [
+   *    [
+   *      {"pt": ["foo", "bar"]},
+   *      {"op": "AND", "cous": ["123"]}
+   *    ],
+   *    [{"op": "NOT"}],
+   *    [{...}, {...}]
+   *  ]
+   * 
    * @method  buildQuery
-   * @param   {Object}  my_option_dict    Parameters
+   * @param   {Object}  my_query_dict    Query parameters
    * @returns {String}  query string
    */
-  function buildQuery(my_option_dict) {
-    var param, query;
+  function buildQuery(my_query_dict) {
+    var i, j, k, key, len, block_len, block, section, query;
 
-    function buildString(my_param, my_value) {
-      switch (my_param) {
-        case "base":
-          return '(base_portal_type: "' +
-            my_value.join('" OR base_portal_type: "') + '")';
+    // NOTE: my_input will be string (operator) or array ([value_list])!
+    function iterator(my_key, my_value, my_input) {
+      var snip;
+
+      if (my_key === "operator") {
+        my_input += ' ' + my_value + ' ';
+      } else {
+        snip = my_key + ': "';
+        my_input += ' (' + snip + my_value.join('" OR ' + snip) + '") ';
       }
+
+      return my_input;
     }
 
-    // start with portal type, remove it in case it was there
-    query = 'portal_type: "' +
-      (my_option_dict.portal_type || 'portal_type_definition') + '" AND ';
-    delete my_option_dict.portal_type;
-
-    // loop over remaining parameters
-    for (param in my_option_dict) {
-      if (my_option_dict.hasOwnProperty(param)) {
-        query += buildString(param, my_option_dict[param]);
+    // TODO: pack up into iterator once all methods are iterable (this one OK)
+    for (i = 0, query = '', len = my_query_dict.length; i < len; i += 1) {
+      block = my_query_dict[i];
+      for (j = 0, block_len = block.length; j < block_len; j += 1) {
+        section = block[j];
+        for (k in section) {
+          if (section.hasOwnProperty(k)) {
+            //my_input = my_callback(k, section[k], my_input);
+            query += iterator(k, section[k], []);
+          }
+        }
       }
     }
-
-    return query;
+    return {"query": query};
+    //return {"query": queryIterator(my_query_dict, iterator, '')};
   }
 
   /**
@@ -129,24 +163,52 @@
      * @param   {Object}  my_storage      Storage to query
      * @param   {String}  my_query_dict   Query parameters
      * @param   {Object}  my_param_dict   Request parameters
-     * @returns {Object}  portal_type_definition
+     * @returns {Object}  query result
      */
     storage.query = function (my_storage, my_query_dict, my_param_dict) {
 
-      return my_storage.allDocs({
-        "query": buildQuery({"base": my_query_dict}),
-        "select_list": default_dict.select_list,
-        "limit": default_dict.limit
-      })
+      return my_storage.allDocs(
+        util.extend(buildQuery(my_query_dict), my_param_dict || {})
+      )
+      // TODO: cleanup
       .then(function (my_result) {
-        var i, len, list;
+        var k, file_len, list, index, i, j, k, key, len, block_len, block,
+          section, src_list, valid_key_list, front, back, pass;
+
+          // TODO: this iterator does not work, on front I have fill but
+          // nothing to fill...http://bit.ly/1yS04CK
+          /*
+          function iterator(my_key, my_value, my_input) {
+            var position, setters, spacer, wrap, fill, replacer, token;
+
+            setters = ["ref", "type"];
+            position = setters.indexOf(my_key);
+
+            if (position > -1) {
+              fill = ["", my_value[0]];
+              replacer = fill[position];
+              token = replacer.split("").reverse().join("");
+
+              wrap = [[], ["x"]];
+              spacer = wrap[position - 1] || wrap[1];
+
+              my_input = my_input.concat.apply(my_input, [spacer, my_value])
+                .join("|")
+                .replace(replacer, "", "g")
+                .split("|")
+                .filter(function (n) { return n !== "" })
+                // breaks on front because replace set, but no items to prefix
+                .join("|" + replacer).split("|")
+            }
+            return my_input;
+          }
+        */
 
         // wrap chain in a separate method to preserve my_type value
-        function fetchFile(my_type) {
-          var name, src, data;
+        function fetchFile(my_name) {
+          var src, data;
 
-          name = 'portal_type_definition' + '_' + my_type;
-          src = 'data/' + name + '.json.js';
+          src = 'data/' + my_name + '.json.js';
 
           function loadAsModule(my_spec) {
             return request(my_spec)
@@ -173,25 +235,66 @@
               });
           }
 
+          // if built load as module, else from disk
           if (storage.is_built) {
-            return loadAsModule([{"name": name, "src": src}]);
+            return loadAsModule([{"name": my_name, "src": src}]);
           }
           return loadFromDisk({"url": src.slice(0, -3)});
         }
 
+        // hold results or promises
         list = [];
 
+        // start here
         // fetch definition from storage || embedded JSON (prod) || disk (dev)
+        // TODO: this will never be robust
+        // TODO: also, on regular alldocs calls, 0 should be possible
         if (my_result.data.total_rows === 0) {
+          src_list = [];
+
+          // assuming definitions are solely based on portal type and
+          // reference portal type
+          valid_key_list = ["portal_type", "reference_portal_type"];
+
+          // TODO: this does not catch errors...!
+          // TODO: add fallback in case keys are not specified, standard case!
+          front = [];
+          back = [];
           for (i = 0, len = my_query_dict.length; i < len; i += 1) {
-            list.push(fetchFile(my_query_dict[i]));
+            block = my_query_dict[i];
+            for (j = 0, block_len = block.length; j < block_len; j += 1) {
+              section = block[j];
+              for (k in section) {
+                index = valid_key_list.indexOf(k);
+                if (section.hasOwnProperty(k) && index > -1) {
+                  //my_input = my_callback(k, section[k], my_input);
+                  switch (index) {
+                    case 0:
+                      front = section[k];
+                      break;
+                    case 1:
+                      back = section[k];
+                      break;
+                  }
+                }
+              }
+            }
           }
+          // create src_list file names from front and back templates
+          src_list = ["x"].concat(back)
+            .join("|" + front + "_").split("|").splice(1, back.length);
+
+          for (k = 0, file_len = src_list.length; k < file_len; k += 1) {
+            list.push(fetchFile(src_list[k]));
+          }
+
           return Promise.all(list);
         }
 
         // just extract data, so it's ready to work with
-        for (i = 0, len = my_result.data.total_rows; i < len; i += 1) {
-          list.push(my_result.data.rows[i].data);
+        file_len = my_result.data.total_rows;
+        for (k = 0; k < file_len; k += 1) {
+          list.push(my_result.data.rows[k].data);
         }
 
         return list;
@@ -199,21 +302,30 @@
     }
 
     /**
-     * Digest a portal type by traversing portal type definitions and
-     * collection field types and base fields and importing all into storage
+     * Digest a portal type by traversing portal type definitions
      * @method  digestType
      * @param   {Object}  my_storage  Storage to query
      * @param   {String}  my_type     Type to query
      * @returns {Object}  my_storage once all data is retrieved
      */
     storage.digestType = function (my_storage, my_type) {
-      var type_list, resolver;
+      var type_list, resolver, query;
 
       type_list = [];
+
+      function makeReferenceQuery(my_reference_list) {
+        return [
+          [
+            {"portal_type": ["portal_definition"]},
+            {"operator": "AND", "reference_portal_type": my_reference_list}
+          ]
+        ];
+      }
+
       resolver = new Promise(function (resolve) {
 
-        function handler(my_pass_store, my_type_list, my_parent_resolve) {
-          return storage.query(my_pass_store, my_type_list, {})
+        function handler(my_pass_store, my_query, my_parent_resolve) {
+          return storage.query(my_pass_store, my_query)
             .then(function (my_result_list) {
               var i, len, iter, kids, pending_list, pender;
 
@@ -226,36 +338,44 @@
 
                 // update type_list
                 type_list.push(iter.base_portal_type);
-
                 // there are kids, so call handler on them
                 if (kids) {
                   pender = new Promise(function (pending_resolve) {
-                    handler(my_storage, kids, pending_resolve);
+                    handler(my_storage, makeReferenceQuery(kids), pending_resolve);
                   });
                   pending_list.push(pender);
                 }
               }
 
-              // once existing branches are resolved, resolve this one, too
+              // once child "branches" are resolved, resolve this one, too
               return Promise.all(pending_list)
-                .then(function (response_list) {
+                .then(function () {
                   my_parent_resolve(type_list);
                 });
             });
         }
 
         // start with first call
-        return handler(my_storage, [my_type], resolve);
+        return handler(my_storage, makeReferenceQuery([my_type]), resolve);
       });
 
       return resolver
         .then(function (my_type_list) {
-          console.log("DONE");
-          console.log(my_type_list);
-          // type_list includes all params for querying field types
-          // TODO: now fetch all fields related to this field type but also
-          // test whether the fields could be included in the pt definition?
-          // 
+
+          // TODO: can this be done easier?
+          query = [
+            [
+              {"portal_type": ["portal_fields"]},
+              {"operator": "AND", "reference_portal_type": my_type_list}
+            ],
+            [{"operator": "OR"}],
+            [
+              {"portal_type": ["portal_actions"]},
+              {"operator": "AND", "reference_portal_type": my_type_list}
+            ]
+          ];
+
+          return storage.query(my_storage, query);
         });
     }
 
