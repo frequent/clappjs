@@ -64,35 +64,6 @@
   }
 
   /**
-   * Method to run over the query JSON syntax. As it's done multiple times
-   * the double loop and object lookup are done here in a central method
-   * @method    queryIterator
-   * @param     {Object}    my_query_dict     List to iterate over
-   * @param     {Method}    my_callback       Iteration method
-   * @param     {Any}       my_input          Value to digest and pass back
-   * @returns   {Any}       Input value
-   */
-  /*
-  function queryIterator(my_query_dict, my_callback, my_input) {
-    var i, j, k, key, len, block_len, block, section;
-
-    for (i = 0, len = my_query_dict.length; i < len; i += 1) {
-      block = my_query_dict[i];
-      for (j = 0, block_len = block.length; j < block_len; j += 1) {
-        section = block[j];
-        for (k in section) {
-          if (section.hasOwnProperty(k)) {
-            my_input = my_callback(k, section[k], my_input);
-          }
-        }
-      }
-    }
-
-    return my_input;
-  }
-  */
-
-  /**
    * Build a qury string from parameters passed
    * First pass at an API:
    *  [
@@ -125,21 +96,28 @@
       return my_input;
     }
 
-    // TODO: pack up into iterator once all methods are iterable (this one OK)
+    // TODO: duplicate iterator
     for (i = 0, query = '', len = my_query_dict.length; i < len; i += 1) {
       block = my_query_dict[i];
+      query += '(';
       for (j = 0, block_len = block.length; j < block_len; j += 1) {
         section = block[j];
         for (k in section) {
           if (section.hasOwnProperty(k)) {
-            //my_input = my_callback(k, section[k], my_input);
             query += iterator(k, section[k], []);
           }
         }
       }
+      query += ')';
     }
+
+    // TODO: find better way than to wrap connectors and replace here...
+    query = query
+      .replace('( AND )', ' AND ', "g")
+      .replace('( OR )', ' OR ', "g")
+      .replace('( NOT )', ' NOT ', "g")
+
     return {"query": query};
-    //return {"query": queryIterator(my_query_dict, iterator, '')};
   }
 
   /**
@@ -173,36 +151,7 @@
       // TODO: cleanup
       .then(function (my_result) {
         var k, file_len, list, index, i, j, k, key, len, block_len, block,
-          section, src_list, valid_key_list, front, back, pass;
-
-          // TODO: this iterator does not work, on front I have fill but
-          // nothing to fill...http://bit.ly/1yS04CK
-          /*
-          function iterator(my_key, my_value, my_input) {
-            var position, setters, spacer, wrap, fill, replacer, token;
-
-            setters = ["ref", "type"];
-            position = setters.indexOf(my_key);
-
-            if (position > -1) {
-              fill = ["", my_value[0]];
-              replacer = fill[position];
-              token = replacer.split("").reverse().join("");
-
-              wrap = [[], ["x"]];
-              spacer = wrap[position - 1] || wrap[1];
-
-              my_input = my_input.concat.apply(my_input, [spacer, my_value])
-                .join("|")
-                .replace(replacer, "", "g")
-                .split("|")
-                .filter(function (n) { return n !== "" })
-                // breaks on front because replace set, but no items to prefix
-                .join("|" + replacer).split("|")
-            }
-            return my_input;
-          }
-        */
+          section, src_list, valid_key_list, front, back, pass, param;
 
         // wrap chain in a separate method to preserve my_type value
         function fetchFile(my_name) {
@@ -250,7 +199,6 @@
         // TODO: this will never be robust
         // TODO: also, on regular alldocs calls, 0 should be possible
         if (my_result.data.total_rows === 0) {
-          src_list = [];
 
           // assuming definitions are solely based on portal type and
           // reference portal type
@@ -258,34 +206,37 @@
 
           // TODO: this does not catch errors...!
           // TODO: add fallback in case keys are not specified, standard case!
-          front = [];
-          back = [];
+
           for (i = 0, len = my_query_dict.length; i < len; i += 1) {
+            src_list = [];
+            front = [];
+            back = [];
             block = my_query_dict[i];
             for (j = 0, block_len = block.length; j < block_len; j += 1) {
               section = block[j];
-              for (k in section) {
-                index = valid_key_list.indexOf(k);
-                if (section.hasOwnProperty(k) && index > -1) {
-                  //my_input = my_callback(k, section[k], my_input);
+              for (param in section) {
+                index = valid_key_list.indexOf(param);
+                if (section.hasOwnProperty(param) && index > -1) {
                   switch (index) {
                     case 0:
-                      front = section[k];
+                      front = section[param];
                       break;
                     case 1:
-                      back = section[k];
+                      back = section[param];
                       break;
                   }
                 }
               }
             }
-          }
-          // create src_list file names from front and back templates
-          src_list = ["x"].concat(back)
-            .join("|" + front + "_").split("|").splice(1, back.length);
+            // need to create src_list and unload here, to handle multiple
+            // query segments (... AND ...) AND (... OR ...)
+            src_list = ["x"].concat(back)
+              .join("|" + front + "_").split("|").splice(1, back.length);
 
-          for (k = 0, file_len = src_list.length; k < file_len; k += 1) {
-            list.push(fetchFile(src_list[k]));
+            // drop off
+            for (k = 0, file_len = src_list.length; k < file_len; k += 1) {
+              list.push(fetchFile(src_list[k]));
+            }
           }
 
           return Promise.all(list);
@@ -337,9 +288,9 @@
                 kids = iter.child_portal_type_list;
 
                 // update type_list
-                type_list.push(iter.base_portal_type);
+                type_list.push(iter.reference_portal_type);
                 // there are kids, so call handler on them
-                if (kids) {
+                if (kids !== null) {
                   pender = new Promise(function (pending_resolve) {
                     handler(my_storage, makeReferenceQuery(kids), pending_resolve);
                   });
