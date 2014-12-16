@@ -148,21 +148,30 @@
       return my_storage.allDocs(
         util.extend(buildQuery(my_query_dict), my_param_dict || {})
       )
-      // TODO: cleanup
+      // TODO: cleanup, this fails promise chain! because it makes http-requests
       .then(function (my_result) {
         var k, file_len, list, index, i, j, k, key, len, block_len, block,
           section, src_list, valid_key_list, front, back, pass, param;
 
         // wrap chain in a separate method to preserve my_type value
         function fetchFile(my_name) {
-          var src, data;
+          var src, data, i, len, list;
 
           src = 'data/' + my_name + '.json.js';
 
           function loadAsModule(my_spec) {
             return request(my_spec)
               .then(function (my_response) {
+
+                // TODO: this should be done in generic response handler
                 data = my_response;
+                if (util.typeOf(data, 'Array')) {
+                  list = [];
+                  for (i = 0, len = data.length; i < len; i += 1) {
+                    list.push(my_storage.post[i]);
+                  }
+                  return Promise.all(list);
+                }
                 return my_storage.post(data);
               })
               .then(function () {
@@ -174,9 +183,20 @@
           }
 
           function loadFromDisk(my_raw_src) {
+            var i, len, list;
             return jio.util.ajax(my_raw_src)
               .then(function (my_response) {
+
+                // TODO: this should be done in generic response handler
                 data = util.parse(my_response.target.responseText);
+                if (util.typeOf(data, 'Array')) {
+                  list = [];
+                  for (i = 0, len = data.length; i < len; i += 1) {
+                    list.push(my_storage.post[i]);
+                  }
+                  return Promise.all(list);
+                }
+                return my_storage.post(data);
                 return my_storage.post(data);
               })
               .then(function () {
@@ -310,6 +330,7 @@
         return handler(my_storage, makeReferenceQuery([my_type]), resolve);
       });
 
+      // TODO: not recursive, no?
       return resolver
         .then(function (my_type_list) {
 
