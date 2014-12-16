@@ -1,0 +1,5 @@
+{
+  "portal_type": "portal_actions",
+  "reference_portal_type": "storage_definition",
+  "child_portal_type_list": ["storage_local", "storage_indexeddb", "storage_dropbox", "storage_s3", "storage_dav"]
+}
