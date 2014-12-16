@@ -197,7 +197,6 @@
                   return Promise.all(list);
                 }
                 return my_storage.post(data);
-                return my_storage.post(data);
               })
               .then(function () {
                 return data;
