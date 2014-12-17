@@ -130,9 +130,12 @@
     "src": '../../lib/jio/jio.js',
     "shim": true
   }, {
+    "name": 'hasher',
+    "src": '../../src/clapp.util.hasher'
+  },{
     "name": 'util',
     "src": '../../src/clapp.util.js'
-  }], function (jio, util) {
+  }], function (jio, hasher, util) {
     var storage = {};
 
     /**
@@ -351,21 +354,30 @@
     }
 
     /**
-     * Recover or create a storage
-     * @method  recoverStorage
-     * @param   {Object}  my_http_response    http response object
-     * @returns {Object}  generated storage
+     * Create a new storage. If nothing is specified it will be on memory.
+     * Note that all storage (js) files requested will be fetched based on
+     * the defined spec before creating and returning the storage.
+     * @method  createStorage
+     * @param   {String}    my_name   Name of the storage
+     * @param   {Object}    my_config Storage configuration
+     * @returns {Object}    generated storage
      */
-    storage.recoverStorage = function (my_http_response) {
-      var portal_type = my_http_response._links.fallback.name;
+    storage.createStorage = function (my_name, my_config) {
+      var spec;
 
-      // need a flux
-      return storage.createStorage("flux")
-        .then(function (my_storage) {
-          return storage.digestType(my_storage, portal_type);
-        })
-        .then(function (my_ready_flux) {
-          // TODO: need to be ready here!
+      // spec is either passed or fallback to memory
+      spec = my_config || {
+        "type": 'local',
+        "mode": 'memory',
+        "username": my_name,
+        "application_name": my_name
+      };
+
+      // retrieve all storages files named in spec, then create storage
+      return request(generateModuleSpec(retrieveStorageTypes(spec)))
+        .then(function () {
+          var new_store = jio.createJIO(spec);
+          return new_store;
         });
     };
 
@@ -404,6 +416,30 @@
     };
 
     /**
+     * Recover or create a storage
+     * @method  recoverStorage
+     * @param   {Object}  my_http_response    http response object
+     * @returns {Object}  generated storage
+     */
+    storage.recoverStorage = function (my_http_response) {
+      var portal_type = hasher.getUrlQueryParam(
+        "key",
+        my_http_response._links.fallback.href
+      );
+
+      // need a flux
+      return storage.createStorage("flux")
+        .then(function (my_storage) {
+          return storage.digestType(my_storage, portal_type);
+        })
+        .then(function (my_ready_flux) {
+          // TODO: need to be ready here!
+        });
+    };
+
+    // ================== ENTRY POINT INITALIZATION =========================
+
+    /**
      * When no storage is available, this will fetch the appropriate module
      * and help setting up storage. Will only pass back to loop when storage
      * has been created
@@ -416,34 +452,6 @@
       return storage.resolveLocation(my_url_param) ||
         storage.recoverStorage(my_hate_response);
     }
-
-    /**
-     * Create a new storage. If nothing is specified it will be on memory.
-     * Note that all storage (js) files requested will be fetched based on
-     * the defined spec before creating and returning the storage.
-     * @method  createStorage
-     * @param   {String}    my_name   Name of the storage
-     * @param   {Object}    my_config Storage configuration
-     * @returns {Object}    generated storage
-     */
-    storage.createStorage = function (my_name, my_config) {
-      var spec;
-
-      // spec is either passed or fallback to memory
-      spec = my_config || {
-        "type": 'local',
-        "mode": 'memory',
-        "username": my_name,
-        "application_name": my_name
-      };
-
-      // retrieve all storages files named in spec, then create storage
-      return request(generateModuleSpec(retrieveStorageTypes(spec)))
-        .then(function () {
-          var new_store = jio.createJIO(spec);
-          return new_store;
-        });
-    };
 
     return storage;
   });
