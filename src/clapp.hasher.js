@@ -45,10 +45,11 @@
    * @param   {String}  my_urn    url needing to parse
    * @returns {Object}  URN object
    */
+  // TODO: decode decode decode?
   function parseKeyString(my_key_string) {
     var url_param_list, param_list, i, len, url_dict, key;
 
-    url_param_list = my_urn.split("&");
+    url_param_list = my_key_string.split("&");
     url_dict = {};
 
     for (i = 0, len = url_param_list.length; i < len; i += 1) {
@@ -78,10 +79,12 @@
     * @param   {Object}  my_urn    urn to parse
     * @returns {Array}   list of key-based objects
     */
+  // TODO: what was this for again???
   function parseUrn(my_urn) {
     var key_list, i, len, url_list;
 
-    key_list = my_urn.substr(3).split("key=").slice(1);
+    // TODO: no substr(2)!!!
+    key_list = my_urn.substr(2).split("key=").slice(1);
     url_list = [];
 
     for (i = 0, len = key_list.length; i < len; i += 1) {
@@ -158,7 +161,7 @@
      * {base_url}    => location
      *  /
      *  {#seo}          => always set to ! for SEO crawlers
-     *  {&(...)*}       => [custom], allowing multiple RFC6570 expressions
+     *  {&(...)*}       => [custom], allowing multiple RFC6570 expressions!!!
      *  {&key}          => portal type
      *  {&view}         => default|action[dialog]|export[dialog]
      *  {&handler}      => method to call [all|get|put|del|new]
@@ -262,8 +265,8 @@
           "name": 'Application Root'
         },
         "fallback": {
-          "href": '{base_url}/#!{key:storage_specification_module}',
-          "name": 'storage_specification'
+          "href": '{base_url}/#!{key=storage_specification}',
+          "name": 'Application Root Initializer'
         }
       };
       this.title = "Restricted Hateoas Polyfill";
@@ -295,12 +298,14 @@
      * retrieve a query parameter from the url looking through all key dicts
      * @method  getUrlQueryParam
      * @param   {String}    my_param  Parameter to retrieve
+     * @param   {String}    my_urn    Urn to parse instead of location
      * @returns {String}    value of parameter or undefined
      */
-    hasher.getUrlQueryParam = function (my_param) {
-      var i, len, key_list, item;
+    hasher.getUrlQueryParam = function (my_param, my_urn) {
+      var i, len, key_list, item, hash;
 
-      key_list = parseUrn(window.location.hash);
+      hash = (my_urn || window.location.href).split("#")[1] || "";
+      key_list = parseUrn("#" + decode(hash));
       for (i = 0, len = key_list.length; i < len; i += 1) {
         item = key_list[i][my_param];
         if (item) {
