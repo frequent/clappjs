@@ -2,6 +2,8 @@
   {
     "portal_type": "portal_field",
     "reference_portal_type": "storage_indexeddb",
+    "dependent_portal_type_list": ["base_fields"],
+    "dependent_reference_field": "field_type",
     "field_name": "portal_type",
     "i18n_title": "",
     "i18n_label": "",
@@ -13,6 +15,8 @@
   {
     "portal_type": "portal_field",
     "reference_portal_type": "storage_indexeddb",
+    "dependent_portal_type_list": ["base_fields"],
+    "dependent_reference_field": "field_type",
     "field_name": "root_reference",
     "i18n_title": "",
     "i18n_label": "",
@@ -24,6 +28,8 @@
   {
     "portal_type": "portal_field",
     "reference_portal_type": "storage_indexeddb",
+    "dependent_portal_type_list": ["base_fields"],
+    "dependent_reference_field": "field_type",
     "field_name": "parent_reference",
     "i18n_title": "",
     "i18n_label": "",
@@ -35,6 +41,8 @@
   {
     "portal_type": "portal_field",
     "reference_portal_type": "storage_indexeddb",
+    "dependent_portal_type_list": ["base_fields"],
+    "dependent_reference_field": "field_type",
     "field_name": "parent_module",
     "i18n_title": "",
     "i18n_label": "",
@@ -46,6 +54,8 @@
   {
     "portal_type": "portal_field",
     "reference_portal_type": "storage_indexeddb",
+    "dependent_portal_type_list": ["base_fields"],
+    "dependent_reference_field": "field_type",
     "field_name": "depth_level",
     "i18n_title": "",
     "i18n_label": "",
@@ -57,6 +67,8 @@
   {
     "portal_type": "portal_field",
     "reference_portal_type": "storage_indexeddb",
+    "dependent_portal_type_list": ["base_fields"],
+    "dependent_reference_field": "field_type",
     "field_name": "sub_storage_type",
     "i18n_title": "",
     "i18n_label": "",
@@ -68,6 +80,8 @@
   {
     "portal_type": "portal_field",
     "reference_portal_type": "storage_indexeddb",
+    "dependent_portal_type_list": ["base_fields"],
+    "dependent_reference_field": "field_type",
     "field_name": "database",
     "i18n_title": "",
     "i18n_label": "",

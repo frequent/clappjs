@@ -1,5 +1,8 @@
 {
   "portal_type": "portal_definition",
   "reference_portal_type": "storage_specification",
-  "child_portal_type_list": ["storage_definition", "storage_handler"]
+  "dependent_reference_field": "reference_portal_type",
+  "dependent_portal_type_list": ["portal_fields", "portal_actions"],
+  "child_portal_type_list": ["storage_definition", "storage_handler"],
+  "child_required": true
 }
