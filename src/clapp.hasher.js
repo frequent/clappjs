@@ -370,12 +370,14 @@
      * test if a http response is "hate". If not, shim it accordingly.
      * @method    convertResponseToHate
      * @param     {Object}    my_http_response  xhr response object
+     * @param     {Object}    my_param_dict     request parameters
      * @returns   {Object}    hate response
      */
-    hasher.convertResponseToHate = function (my_http_response) {
-      var response, hate_dict;
+    hasher.convertResponseToHate = function (my_http_response, my_param_dict) {
+      var response, hate_dict, param_dict, param;
 
       response = util.parse(my_http_response || {});
+      param_dict = my_param_dict || {};
 
       // smart server you are...
       if (response.responseType === "application/hal+json") {
@@ -388,7 +390,13 @@
       // handle content)
       hate_dict.contents = hasher.mapContent(my_http_response);
 
-      // TODO: add query params response
+      // query parameters
+      for (param in param_dict) {
+        if (param_dict.hasOwnProperty(param)) {
+          hate_dict["_" + param] = param_dict[param];
+        }
+      }
+
       // TODO: add links to content
       // TODO: add more HATE here
 
