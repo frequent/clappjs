@@ -295,6 +295,57 @@
     var hasher = {};
 
     /**
+     * map the different http responses and everything returned from
+     * fallback queries into a homogenous format. The following response
+     * formats are handle:
+     * - fallback loading (multiple/single records): [[{},{}], [{},{}]
+     * - allDocs (select_list/full doc {data.rows[doc]}, {data.rows[value]}
+     * - get {data}
+     * @method    mapContent
+     * @param     {Object}    my_http_response    response 
+     * @returns   {Object}    formatted object
+     */
+    hasher.mapContent = function (my_http_response) {
+      var content = [];
+
+      // TODO: fallback data will not have ids on initial response, but ids
+      // will not be used anyway at this point, so for now ok.
+      function digestObject(my_object) {
+        var data = my_object.data;
+
+        if (data === undefined) {
+          content.push(my_object);
+        } else {
+          digestResponse(data.rows || [data]);
+        }
+      }
+
+      function digestArray(my_array) {
+        var i, i_len;
+
+        for (i = 0, i_len = my_array.length; i < i_len; i += 1) {
+          digestResponse(my_array[i]);
+        }
+      }
+
+      function digestResponse(my_response) {
+        switch (util.typeOf(my_response)) {
+        case "[object Array]":
+          digestArray(my_response);
+          break;
+        case "[object Object]":
+          digestObject(my_response.value || my_response.doc || my_response);
+          break;
+        }
+      }
+
+      // start
+      digestResponse(my_http_response);
+
+      return content;
+    };
+
+    /**
      * retrieve a query parameter from the url looking through all key dicts
      * @method  getUrlQueryParam
      * @param   {String}    my_param  Parameter to retrieve
@@ -306,6 +357,7 @@
 
       hash = (my_urn || window.location.href).split("#")[1] || "";
       key_list = parseUrn("#" + decode(hash));
+
       for (i = 0, len = key_list.length; i < len; i += 1) {
         item = key_list[i][my_param];
         if (item) {
@@ -333,6 +385,11 @@
       // Base
       hate_dict = createBaseHateResponse();
 
+      // handle content)
+      hate_dict.contents = hasher.mapContent(my_http_response);
+
+      // TODO: add query params response
+      // TODO: add links to content
       // TODO: add more HATE here
 
       return Promise.resolve(resolveHateResponse(hate_dict, util));
