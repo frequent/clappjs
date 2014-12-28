@@ -64,6 +64,35 @@
   }
 
   /**
+   * Build a reference query object, which will then be converted into
+   * the actual query synatax from storage.query buildQuery call. Method
+   * is necessary, because URL will just contain a key=[module] and this
+   * method constructs the query object necessary to look for objects defining
+   * this module
+   * @method  buildReferenceQueryObject
+   * @param   {Array}     my_portal_type_list   list of portal types to query
+   * @param   {Array}     my_reference_list     list of values to query
+   * @param   {String}    my_key                key to query values for
+   * @returns query object
+   */
+  // TODO: this should eventually be generic, too
+  function buildReferenceQueryObject(my_portal_type_list, my_reference_list, my_key) {
+    var i, len, obj, query_object
+
+    query_object = [];
+    for (i = 0, len = my_portal_type_list.length; i < len; i += 1) {
+      if (i > 0) {
+        query_object.push([{"operator": "OR"}]);
+      }
+      obj = {"operator": "AND"};
+      obj[my_key || "reference_portal_type"] = my_reference_list;
+      query_object.push([{"portal_type": [my_portal_type_list[i]]}, obj]);
+    }
+
+    return query_object;
+   }
+
+  /**
    * Build a qury string from parameters passed
    * First pass at an API:
    *  [
@@ -121,6 +150,30 @@
   }
 
   /**
+   * Retrieve keys from a query dict
+   * @method    getQueryKeys
+   * @param     {Array}   my_mock_query_list    Query raw syntax
+   * @returns   {Array}   key_list
+   */
+  function getQueryKeys(my_query_list) {
+    var i, i_len, j, j_len, param, key_list, query_dict, query_element;
+
+    for (key_list = [], i = 0, i_len = my_query_list.length; i < i_len; i += 1) {
+      query_element = my_query_list[i];
+      for (j = 0, j_len = query_element.length; j < j_len; j += 1) {
+        query_dict = query_element[j];
+        for (param in query_dict) {
+          if (query_dict.hasOwnProperty(param) && param !== "operator") {
+            key_list.push(param);
+          }
+        }
+      }
+    }
+
+    return key_list;
+  }
+
+  /**
    * =========================================================================
    *                          EXPOSED METHODS
    * =========================================================================
@@ -147,11 +200,15 @@
      * @returns {Object}  query result
      */
     storage.query = function (my_storage, my_query_dict, my_param_dict) {
+      var query;
 
-      return my_storage.allDocs(
-        util.extend(buildQuery(my_query_dict), my_param_dict || {})
-      )
-      // TODO: cleanup, this fails promise chain! because it makes http-requests
+      query = util.extend(
+        buildQuery(my_query_dict),
+        my_param_dict || {"include_docs": true}
+      );
+
+      // TODO: cleanup, this fails promise chain!
+      return my_storage.allDocs(query)
       .then(function (my_result) {
         var k, file_len, list, index, i, j, k, key, len, block_len, block,
           section, src_list, valid_key_list, front, back, pass, param;
@@ -162,6 +219,7 @@
 
           src = 'data/' + my_name + '.json.js';
 
+          // load as a module
           function loadAsModule(my_spec) {
             return request(my_spec)
               .then(function (my_response) {
@@ -185,6 +243,7 @@
               });
           }
 
+          // load from disk
           function loadFromDisk(my_raw_src) {
             var i, len, list;
             return jio.util.ajax(my_raw_src)
@@ -216,18 +275,15 @@
         // hold results or promises
         list = [];
 
-        // start here
         // fetch definition from storage || embedded JSON (prod) || disk (dev)
-        // TODO: this will never be robust
+        // TODO: make generic
         // TODO: also, on regular alldocs calls, 0 should be possible
+        // TODO: this does not catch errors...!
+        // TODO: add fallback in case keys are not specified, standard case!
         if (my_result.data.total_rows === 0) {
 
-          // assuming definitions are solely based on portal type and
-          // reference portal type
-          valid_key_list = ["portal_type", "reference_portal_type"];
-
-          // TODO: this does not catch errors...!
-          // TODO: add fallback in case keys are not specified, standard case!
+          // retrieve keys from query_dict
+          valid_key_list = getQueryKeys(my_query_dict);
 
           for (i = 0, len = my_query_dict.length; i < len; i += 1) {
             src_list = [];
@@ -250,6 +306,7 @@
                 }
               }
             }
+
             // need to create src_list and unload here, to handle multiple
             // query segments (... AND ...) AND (... OR ...)
             src_list = ["x"].concat(back)
@@ -261,95 +318,124 @@
             }
           }
 
-          return Promise.all(list);
+          return Promise.all(list)
+            .then(function (my_result_list) {
+              return hasher.convertResponseToHate(my_result_list, query);
+            });
         }
 
-        // just extract data, so it's ready to work with
-        file_len = my_result.data.total_rows;
-        for (k = 0; k < file_len; k += 1) {
-          list.push(my_result.data.rows[k].data);
-        }
-
-        return list;
+        // got something from allDoc, wrap result in proper HATE object
+        return hasher.convertResponseToHate(my_result, query);
       });
     }
 
     /**
-     * Digest a portal type by traversing portal type definitions
+     * Digest a portal type by looking up portal_definition of the requested
+     * portal type and subsequent required portal types to gather all
+     * configuration objects required. The method will traverse for a
+     * respective portal type and collect information on dependent portal types
+     * which will be queried once all required definitions have been loaded
+     * (eg. portal definition > portal actions)
      * @method  digestType
      * @param   {Object}  my_storage  Storage to query
      * @param   {String}  my_type     Type to query
+     * @param   {Array}   my_key_list Values to query
+     * @param   {String}  my_key      Key for which to query values
      * @returns {Object}  my_storage once all data is retrieved
      */
-    storage.digestType = function (my_storage, my_type) {
-      var type_list, resolver, query;
+    // TODO: not generic (dito for buildReferenceQueryObject, buildQuery).
+    storage.digestType = function (my_storage, my_value_list, my_portal_type_list, my_key) {
+      var traversal, value_list, portal_type_list, next_key_list, next_portal_type_list, key,
+        next_key;
 
-      type_list = [];
+      // parameters for this digest call
+      portal_type_list = my_portal_type_list || ["portal_definition"];
+      key = my_key || "reference_portal_type";
+      value_list = my_value_list;
 
-      function makeReferenceQuery(my_reference_list) {
-        return [
-          [
-            {"portal_type": ["portal_definition"]},
-            {"operator": "AND", "reference_portal_type": my_reference_list}
-          ]
-        ];
-      }
+      // placeholders for dependency query built during traversal
+      next_portal_type_list = [];
+      next_key_list = [];
 
-      resolver = new Promise(function (resolve) {
+      // this is the traversing promise. If a response has kids that need to
+      // be queried, the resolve of the parent is passed to the child in a
+      // new call to handler. If there are no more kids, the current parent
+      // is resolved which resolves all parent promises while traversing up
+      traversal = new Promise(function (resolve) {
 
         function handler(my_pass_store, my_query, my_parent_resolve) {
           return storage.query(my_pass_store, my_query)
-            .then(function (my_result_list) {
-              var i, len, iter, kids, pending_list, pender;
+            .then(function (my_response) {
+              var i, j, len_i, len_j, deps, iter, kids, pending_list, pender,
+                content;
 
-              // kids blockers will go in here
+              // fetch content from HATE response
+              content = my_response.contents || [];
+
+              // kids will be fetched here via new handler() calls
               pending_list = [];
 
-              for (i = 0, len = my_result_list.length; i < len; i += 1) {
-                iter = my_result_list[i];
+              for (i = 0, len_i = content.length; i < len_i; i += 1) {
+                iter = content[i];
                 kids = iter.child_portal_type_list;
+                deps = iter.dependent_portal_type_list;
 
-                // update type_list
-                type_list.push(iter.reference_portal_type);
-                // there are kids, so call handler on them
+                // add new dependency portal types to follow up parameters
+                if (deps !== null) {
+                  for (j = 0, len_j = deps.length; j < len_j; j += 1) {
+                    if (next_portal_type_list.indexOf(deps[j]) === -1) {
+                      next_portal_type_list.push(deps[j]);
+                    }
+                  }
+
+                  next_key = iter.dependent_reference_field;
+                  if (next_key_list.indexOf(iter[next_key]) === -1) {
+                    next_key_list.push(iter[next_key]);
+                  }
+                }
+
+                // kids will trigger recursive handler() calls
                 if (kids !== null) {
                   pender = new Promise(function (pending_resolve) {
-                    handler(my_storage, makeReferenceQuery(kids), pending_resolve);
+                    handler(
+                      my_storage,
+                      buildReferenceQueryObject(portal_type_list, kids, key),
+                      pending_resolve
+                    );
                   });
                   pending_list.push(pender);
                 }
               }
 
-              // once child "branches" are resolved, resolve this one, too
+              // once all kids have been loaded, resolve the respective parent
               return Promise.all(pending_list)
                 .then(function () {
-                  my_parent_resolve(type_list);
+                  my_parent_resolve([next_key_list, next_portal_type_list, next_key]);
                 });
             });
         }
 
-        // start with first call
-        return handler(my_storage, makeReferenceQuery([my_type]), resolve);
+        // start loading definitions: first call to handler
+        return handler(
+          my_storage,
+          buildReferenceQueryObject(portal_type_list, value_list, key),
+          resolve
+        );
       });
 
-      // TODO: not recursive, no?
-      return resolver
-        .then(function (my_type_list) {
+      // start:
+      return traversal
 
-          // TODO: can this be done easier?
-          query = [
-            [
-              {"portal_type": ["portal_fields"]},
-              {"operator": "AND", "reference_portal_type": my_type_list}
-            ],
-            [{"operator": "OR"}],
-            [
-              {"portal_type": ["portal_actions"]},
-              {"operator": "AND", "reference_portal_type": my_type_list}
-            ]
-          ];
+        // done, resolving the last promise returns follow up call parameters
+        .then(function (my_new_digest_parameter_list) {
+          var last, param_list;
 
-          return storage.query(my_storage, query);
+          param_list = [my_storage].concat(my_new_digest_parameter_list);
+          last = param_list[3];
+
+          if (last !== undefined) {
+            return storage.digestType.apply(null, param_list);
+          }
         });
     }
 
@@ -430,9 +516,10 @@
       // need a flux
       return storage.createStorage("flux")
         .then(function (my_storage) {
-          return storage.digestType(my_storage, portal_type);
+          return storage.digestType(my_storage, [portal_type]);
         })
         .then(function (my_ready_flux) {
+          console.log("et viola");
           // TODO: need to be ready here!
         });
     };
