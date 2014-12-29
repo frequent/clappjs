@@ -64,35 +64,6 @@
   }
 
   /**
-   * Build a reference query object, which will then be converted into
-   * the actual query synatax from storage.query buildQuery call. Method
-   * is necessary, because URL will just contain a key=[module] and this
-   * method constructs the query object necessary to look for objects defining
-   * this module
-   * @method  buildReferenceQueryObject
-   * @param   {Array}     my_portal_type_list   list of portal types to query
-   * @param   {Array}     my_reference_list     list of values to query
-   * @param   {String}    my_key                key to query values for
-   * @returns query object
-   */
-  // TODO: this should eventually be generic, too
-  function buildReferenceQueryObject(my_portal_type_list, my_reference_list, my_key) {
-    var i, len, obj, query_object
-
-    query_object = [];
-    for (i = 0, len = my_portal_type_list.length; i < len; i += 1) {
-      if (i > 0) {
-        query_object.push([{"operator": "OR"}]);
-      }
-      obj = {"operator": "AND"};
-      obj[my_key || "reference_portal_type"] = my_reference_list;
-      query_object.push([{"portal_type": [my_portal_type_list[i]]}, obj]);
-    }
-
-    return query_object;
-   }
-
-  /**
    * Build a qury string from parameters passed
    * First pass at an API:
    *  [
@@ -103,11 +74,12 @@
    *    [{"op": "NOT"}],
    *    [{...}, {...}]
    *  ]
-   * 
+   *
    * @method  buildQuery
    * @param   {Object}  my_query_dict    Query parameters
    * @returns {String}  query string
    */
+  // TODO: Keep synatx, make generic
   function buildQuery(my_query_dict) {
     var i, j, k, key, len, block_len, block, section, query;
 
@@ -150,11 +122,41 @@
   }
 
   /**
+   * Build a reference query object, which will then be converted into
+   * the actual query synatax from storage.query buildQuery call. Method
+   * is necessary, because URL will just contain a key=[module] and this
+   * method constructs the query object necessary to look for objects defining
+   * this module
+   * @method  buildReferenceQueryObject
+   * @param   {Array}     my_portal_type_list   list of portal types to query
+   * @param   {Array}     my_reference_list     list of values to query
+   * @param   {String}    my_key                key to query values for
+   * @returns query object
+   */
+  // TODO: redo the whole section of assembling queries, keep syntax, make generic
+  function buildReferenceQueryObject(my_portal_type_list, my_reference_list, my_key) {
+    var i, len, obj, query_object
+
+    query_object = [];
+    for (i = 0, len = my_portal_type_list.length; i < len; i += 1) {
+      if (i > 0) {
+        query_object.push([{"operator": "OR"}]);
+      }
+      obj = {"operator": "AND"};
+      obj[my_key] = my_reference_list;
+      query_object.push([{"portal_type": [my_portal_type_list[i]]}, obj]);
+    }
+
+    return query_object;
+   }
+
+  /**
    * Retrieve keys from a query dict
    * @method    getQueryKeys
    * @param     {Array}   my_mock_query_list    Query raw syntax
    * @returns   {Array}   key_list
    */
+  // TODO: make generic
   function getQueryKeys(my_query_list) {
     var i, i_len, j, j_len, param, key_list, query_dict, query_element;
 
@@ -192,6 +194,71 @@
     var storage = {};
 
     /**
+     * Fetch and store a file as a module or from disk
+     * @method    fetchFile
+     * @param     {String}    my_name     Name of file
+     * @param     {Object}    my_storage  Storage to save result to
+     * @returns   {Object}    retrieved content
+     */
+    storage.fetchFile = function (my_name, my_storage) {
+      var src, data, i, len, list;
+
+      // load as a module
+      function loadAsModule(my_spec) {
+        return request(my_spec)
+          .then(function (my_response) {
+
+            // TODO: this should be done in generic response handler
+            data = my_response;
+            if (util.typeOf(data, 'Array')) {
+              list = [];
+              for (i = 0, len = data.length; i < len; i += 1) {
+                list.push(my_storage.post[i]);
+              }
+              return Promise.all(list);
+            }
+            return my_storage.post(data);
+          })
+          .then(function () {
+            return data;
+          })
+          .caught(function() {
+            return loadFromDisk({"url": my_spec[0].src.slice(0, -3)});
+          });
+      }
+
+      // load from disk
+      function loadFromDisk(my_raw_src) {
+        var i, len, list;
+        return jio.util.ajax(my_raw_src)
+          .then(function (my_response) {
+
+            // TODO: this should be done in generic response handler
+            data = util.parse(my_response.target.responseText);
+            if (util.typeOf(data, 'Array')) {
+              list = [];
+              for (i = 0, len = data.length; i < len; i += 1) {
+                list.push(my_storage.post[i]);
+              }
+              return Promise.all(list);
+            }
+            return my_storage.post(data);
+          })
+          .then(function () {
+            return data;
+          });
+      }
+
+      src = 'data/' + my_name + '.json.js';
+
+      // if built load as module, else from disk
+      if (storage.is_built) {
+        return loadAsModule([{"name": my_name, "src": src}]);
+      }
+      return loadFromDisk({"url": src.slice(0, -3)});
+    }
+
+    /**
      * Retrieve a defintion from storage, try to load as module or from file
      * @method  query
      * @param   {Object}  my_storage      Storage to query
@@ -212,65 +279,6 @@
       .then(function (my_result) {
         var k, file_len, list, index, i, j, k, key, len, block_len, block,
           section, src_list, valid_key_list, front, back, pass, param;
-
-        // wrap chain in a separate method to preserve my_type value
-        function fetchFile(my_name) {
-          var src, data, i, len, list;
-
-          src = 'data/' + my_name + '.json.js';
-
-          // load as a module
-          function loadAsModule(my_spec) {
-            return request(my_spec)
-              .then(function (my_response) {
-
-                // TODO: this should be done in generic response handler
-                data = my_response;
-                if (util.typeOf(data, 'Array')) {
-                  list = [];
-                  for (i = 0, len = data.length; i < len; i += 1) {
-                    list.push(my_storage.post[i]);
-                  }
-                  return Promise.all(list);
-                }
-                return my_storage.post(data);
-              })
-              .then(function () {
-                return data;
-              })
-              .caught(function() {
-                return loadFromDisk({"url": my_spec[0].src.slice(0, -3)});
-              });
-          }
-
-          // load from disk
-          function loadFromDisk(my_raw_src) {
-            var i, len, list;
-            return jio.util.ajax(my_raw_src)
-              .then(function (my_response) {
-
-                // TODO: this should be done in generic response handler
-                data = util.parse(my_response.target.responseText);
-                if (util.typeOf(data, 'Array')) {
-                  list = [];
-                  for (i = 0, len = data.length; i < len; i += 1) {
-                    list.push(my_storage.post[i]);
-                  }
-                  return Promise.all(list);
-                }
-                return my_storage.post(data);
-              })
-              .then(function () {
-                return data;
-              });
-          }
-
-          // if built load as module, else from disk
-          if (storage.is_built) {
-            return loadAsModule([{"name": my_name, "src": src}]);
-          }
-          return loadFromDisk({"url": src.slice(0, -3)});
-        }
 
         // hold results or promises
         list = [];
@@ -314,7 +322,7 @@
 
             // drop off
             for (k = 0, file_len = src_list.length; k < file_len; k += 1) {
-              list.push(fetchFile(src_list[k]));
+              list.push(storage.fetchFile(src_list[k], my_storage));
             }
           }
 
