@@ -201,12 +201,13 @@
      * @returns   {Object}    retrieved content
      */
     storage.fetchFile = function (my_name, my_storage) {
-      var src, data, i, len, list;
+      var src, data, param, handler;
 
       // load as a module
       function loadAsModule(my_spec) {
         return request(my_spec)
           .then(function (my_response) {
+            var i, len, list;
 
             // TODO: this should be done in generic response handler
             data = my_response;
@@ -222,16 +223,18 @@
           .then(function () {
             return data;
           })
-          .caught(function() {
+
+          // stay with basic syntax to make sure any promise lib works
+          .then(undefined, function() {
             return loadFromDisk({"url": my_spec[0].src.slice(0, -3)});
           });
       }
 
       // load from disk
       function loadFromDisk(my_raw_src) {
-        var i, len, list;
         return jio.util.ajax(my_raw_src)
           .then(function (my_response) {
+            var i, len, list;
 
             // TODO: this should be done in generic response handler
             data = util.parse(my_response.target.responseText);
@@ -274,62 +277,62 @@
         my_param_dict || {"include_docs": true}
       );
 
-      // TODO: cleanup, this fails promise chain!
+      // NOTE: storage uses RSVP, so .caught does not work. .fail will, so to
+      // make sure the chain does not break use underlying syntax
       return my_storage.allDocs(query)
-      .then(function (my_result) {
-        var k, file_len, list, index, i, j, k, key, len, block_len, block,
-          section, src_list, valid_key_list, front, back, pass, param;
+        .then(function (my_result) {
+          var k, file_len, list, index, i, j, k, key, len, block_len, block,
+            section, src_list, valid_key_list, front, back, pass, param;
 
-        // hold results or promises
-        list = [];
+          // hold results or promises
+          list = [];
 
-        // fetch definition from storage || embedded JSON (prod) || disk (dev)
-        // TODO: make generic
-        // TODO: also, on regular alldocs calls, 0 should be possible
-        // TODO: this does not catch errors...!
-        // TODO: add fallback in case keys are not specified, standard case!
-        if (my_result.data.total_rows === 0) {
+          // fetch definition from storage || embedded JSON (prod) || disk (dev)
+          // TODO: make generic
+          // TODO: also, on regular alldocs calls, 0 should be possible
+          // TODO: this does not catch errors...!
+          // TODO: add fallback in case keys are not specified, standard case!
+          if (my_result.data.total_rows === 0) {
 
-          // retrieve keys from query_dict
-          valid_key_list = getQueryKeys(my_query_dict);
+            // retrieve keys from query_dict
+            valid_key_list = getQueryKeys(my_query_dict);
 
-          for (i = 0, len = my_query_dict.length; i < len; i += 1) {
-            src_list = [];
-            front = [];
-            back = [];
-            block = my_query_dict[i];
-            for (j = 0, block_len = block.length; j < block_len; j += 1) {
-              section = block[j];
-              for (param in section) {
-                index = valid_key_list.indexOf(param);
-                if (section.hasOwnProperty(param) && index > -1) {
-                  switch (index) {
-                    case 0:
-                      front = section[param];
-                      break;
-                    case 1:
-                      back = section[param];
-                      break;
+            for (i = 0, len = my_query_dict.length; i < len; i += 1) {
+              src_list = [];
+              front = [];
+              back = [];
+              block = my_query_dict[i];
+              for (j = 0, block_len = block.length; j < block_len; j += 1) {
+                section = block[j];
+                for (param in section) {
+                  index = valid_key_list.indexOf(param);
+                  if (section.hasOwnProperty(param) && index > -1) {
+                    switch (index) {
+                      case 0:
+                        front = section[param];
+                        break;
+                      case 1:
+                        back = section[param];
+                        break;
+                    }
                   }
                 }
               }
+
+              // need to create src_list and unload here, to handle multiple
+              // query segments (... AND ...) AND (... OR ...)
+              src_list = ["x"].concat(back)
+                .join("|" + front + "_").split("|").splice(1, back.length);
+
+              // drop off
+              for (k = 0, file_len = src_list.length; k < file_len; k += 1) {
+                list.push(storage.fetchFile(src_list[k], my_storage));
+              }
             }
-
-            // need to create src_list and unload here, to handle multiple
-            // query segments (... AND ...) AND (... OR ...)
-            src_list = ["x"].concat(back)
-              .join("|" + front + "_").split("|").splice(1, back.length);
-
-            // drop off
-            for (k = 0, file_len = src_list.length; k < file_len; k += 1) {
-              list.push(storage.fetchFile(src_list[k], my_storage));
-            }
-          }
-
-          return Promise.all(list)
-            .then(function (my_result_list) {
-              return hasher.convertResponseToHate(my_result_list, query);
-            });
+            return Promise.all(list)
+              .then(function (my_result_list) {
+                return hasher.convertResponseToHate(my_result_list, query);
+              });
         }
 
         // got something from allDoc, wrap result in proper HATE object
@@ -351,10 +354,9 @@
      * @param   {String}  my_key      Key for which to query values
      * @returns {Object}  my_storage once all data is retrieved
      */
-    // TODO: not generic (dito for buildReferenceQueryObject, buildQuery).
     storage.digestType = function (my_storage, my_value_list, my_portal_type_list, my_key) {
-      var traversal, value_list, portal_type_list, next_key_list, next_portal_type_list, key,
-        next_key;
+      var traversal, value_list, portal_type_list, next_key_list, 
+        next_portal_type_list, key, next_key;
 
       // parameters for this digest call
       portal_type_list = my_portal_type_list || ["portal_definition"];
@@ -369,9 +371,9 @@
       // be queried, the resolve of the parent is passed to the child in a
       // new call to handler. If there are no more kids, the current parent
       // is resolved which resolves all parent promises while traversing up
-      traversal = new Promise(function (resolve) {
+      traversal = new Promise(function (resolve, reject) {
 
-        function handler(my_pass_store, my_query, my_parent_resolve) {
+        function handler(my_pass_store, my_query, my_parent_resolve, my_parent_reject) {
           return storage.query(my_pass_store, my_query)
             .then(function (my_response) {
               var i, j, len_i, len_j, deps, iter, kids, pending_list, pender,
@@ -404,11 +406,12 @@
 
                 // kids will trigger recursive handler() calls
                 if (kids !== null) {
-                  pender = new Promise(function (pending_resolve) {
+                  pender = new Promise(function (pending_resolve, pending_reject) {
                     handler(
                       my_storage,
                       buildReferenceQueryObject(portal_type_list, kids, key),
-                      pending_resolve
+                      pending_resolve,
+                      pending_reject
                     );
                   });
                   pending_list.push(pender);
@@ -420,14 +423,23 @@
                 .then(function () {
                   my_parent_resolve([next_key_list, next_portal_type_list, next_key]);
                 });
+            })
+            // Catch errors and empty queries resulting in 404 in fallback
+            // queries. Note, that jio depends on RSVP, which uses "fail" vs
+            // bluebird "caught/catch". Use base promise syntax to make sure
+            // the chain does not break!
+            .then(undefined, function (my_error) {
+              my_parent_reject(my_error);
             });
         }
 
-        // start loading definitions: first call to handler
+        // start loading definitions: first call to handler, pass both resolve
+        // and reject, so errors can be caught
         return handler(
           my_storage,
           buildReferenceQueryObject(portal_type_list, value_list, key),
-          resolve
+          resolve,
+          reject
         );
       });
 
@@ -476,77 +488,23 @@
     };
 
     /**
-     * Try to resolve storage location from URL and create location
-     * @method  resolveLocation
-     * @param   {String}  my_url_param  URL parameter retrieved
-     * @returns {Object}  generated storage
-     */
-    storage.resolveLocation = function (my_url_param) {
-      var flux, spec;
-
-      try {
-        spec = JSON.parse(util.decode(atob(my_url_param)));
-
-        // TODO: FIX
-//         flux = storage.createStorage("flux");
-//
-//
-//         return flux.post({
-//           "portal_type": 'storage_location'
-//         }).then(function (my_location) {
-//           return storage.saveStorageTree(my_location._id, spec, flux);
-//         }).then(function () {
-//           return storage.assembleStorageLocation(flux);
-//         }).then(function (my_location_configuration) {
-//
-//           // dipose
-//           flux = null;
-//           return storage.createStorage(my_location_configuration);
-//         });
-
-      } catch (err) {
-        return undefined;
-      }
-    };
-
-    /**
-     * Recover or create a storage
-     * @method  recoverStorage
+     * Retrieve data from storage (structural and data)
+     * @method  retrieveData
+     * @param   {Object}  my_store            storage to access
      * @param   {Object}  my_http_response    http response object
-     * @returns {Object}  generated storage
+     * @returns {Object}  structural data and data needed to render
      */
-    storage.recoverStorage = function (my_http_response) {
+    storage.retrieveData = function (my_store, my_http_response) {
       var portal_type = hasher.getUrlQueryParam(
         "key",
         my_http_response._links.fallback.href
       );
 
-      // need a flux
-      return storage.createStorage("flux")
-        .then(function (my_storage) {
-          return storage.digestType(my_storage, [portal_type]);
-        })
-        .then(function (my_ready_flux) {
+      return storage.digestType(my_store, [portal_type])
+        .then(function () {
           console.log("et viola");
-          // TODO: need to be ready here!
         });
     };
-
-    // ================== ENTRY POINT INITALIZATION =========================
-
-    /**
-     * When no storage is available, this will fetch the appropriate module
-     * and help setting up storage. Will only pass back to loop when storage
-     * has been created
-     * @method  setupStorage
-     * @param   {String}    my_url_param      URL parameter if available
-     * @param   {Object}    my_hate_response  HTTP response object
-     * @returns {Object}    generated storage
-     */
-    storage.setupStorage = function (my_url_param, my_hate_response) {
-      return storage.resolveLocation(my_url_param) ||
-        storage.recoverStorage(my_hate_response);
-    }
 
     return storage;
   });
