@@ -9,7 +9,7 @@
     "i18n_title": "",
     "i18n_label": "",
     "i18n_description": "",
-    "field_type": "StringField",
+    "field_type": "string_field",
     "required": true,
     "internal": true
   },
@@ -23,7 +23,7 @@
     "i18n_title": "",
     "i18n_label": "",
     "i18n_description": "",
-    "field_type": "StringField",
+    "field_type": "string_field",
     "required": true,
     "internal": true
   },
@@ -37,7 +37,7 @@
     "i18n_title": "",
     "i18n_label": "",
     "i18n_description": "",
-    "field_type": "StringField",
+    "field_type": "string_field",
     "required": true,
     "internal": true
   },
@@ -51,7 +51,7 @@
     "i18n_title": "",
     "i18n_label": "",
     "i18n_description": "",
-    "field_type": "ListField",
+    "field_type": "list_field",
     "required": true,
     "internal": true
   },
@@ -65,7 +65,7 @@
     "i18n_title": "",
     "i18n_label": "",
     "i18n_description": "",
-    "field_type": "IntegerField",
+    "field_type": "integer_field",
     "required": true,
     "internal": true
   },
@@ -79,7 +79,7 @@
     "i18n_title": "",
     "i18n_label": "",
     "i18n_description": "",
-    "field_type": "ListField",
+    "field_type": "list_field",
     "required": true,
     "internal": true
   },
@@ -93,7 +93,7 @@
     "i18n_title": "",
     "i18n_label": "",
     "i18n_description": "",
-    "field_type": "StringField",
+    "field_type": "string_field",
     "required": true,
     "internal": null
   }
