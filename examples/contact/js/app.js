@@ -65,38 +65,107 @@
     }
   }
 
-  // here we go 
+  // here we go
   contentLoaded(window, function () {
     var util, render, storage, hasher;
 
     /**
-     * Retrieve data source or create one
+     * Retrieve data source information
      * @method  getSource
      * @param   {Object}  my_hate_response  HAL+JSON response object
-     * @returns {Promise} 
+     * @returns {Promise} hate response with pointer storage information
      */
+    // TODO: don't call this on every runner loop!
+    // TODO: should I hack around in hate response? What will be passed around?
     function getSource(my_hate_response) {
+      my_hate_response.storage_pointer = hasher.getUrlQueryParam("pointer");
 
-      // need a storage to continue
-      flux.store = flux.store || storage.setupStorage(
-          hasher.getUrlQueryParam("pointer"),
-          my_hate_response
-      );
-
-      return flux.store;
+      return Promise.resolve(my_hate_response);
     }
 
-    // main handler will be called by hashChange unless on first init
+    /**
+     * Decode data source information
+     * @method  validateSource
+     * @param   {Object}  my_hate_response  HAL+JSON response object
+     * @returns {Promise} hate response with decoded storage information
+     */
+    // TODO: do nothing for now
+    function validateSource(my_hate_response) {
+      return Promise.resolve(my_hate_response);
+    }
+
+    /**
+     * Initialize storage if there is none
+     * @method  renderSource
+     * @param   {Object}  my_hate_response  HAL+JSON response object
+     * @returns {Promise} hate response
+     */
+    function renderSource(my_hate_response) {
+      // create from pointer
+
+      // initialize flux
+      if (flux.store === undefined) {
+        return storage.createStorage("flux")
+          .then(function (my_store) {
+            flux.store = my_store;
+            return my_hate_response;
+          })
+      }
+
+      // default, do nothing
+      return Promise.resolve(my_hate_response);
+    }
+
+    /**
+     * Retrieve data based on url information, this includes structural files
+     * and actual data
+     * @method  getState
+     * @param   {Object}  my_hate_response  HAL+JSON response object
+     * @returns {Promise}
+     */
+    function getState(my_hate_response) {
+
+      // TODO: for the moment, the url is assumed empty
+      var url_param_list = [];
+
+      return storage.retrieveData(flux.store, my_hate_response);
+    }
+
+    /**
+     * Validate retrieved data = decode if necessary?
+     * @method  validateState
+     * @param   {Object}    my_data   retrieved data
+     * @returns {Promise}
+     */
+    function validateState(my_data) {
+      return Promise.resolve(my_data);
+    }
+
+    /**
+     * Render validated data = generate UI
+     * @method  renderState
+     * @param   {Object}    my_data   retrieved & validated data
+     * @returns {Promise}
+     */
+    function renderState(my_data) {
+      console.log("DONE");
+      return Promise.resolve();
+    }
+
+    /**
+     * Core application loop. Handles everything.
+     * @method  runner
+     * @param   {Object}  my_http_response    HAL+JSON response object
+     * @returns {Promise}
+     */
     function runner(my_http_response) {
       return hasher.convertResponseToHate(my_http_response)
         .then(getSource)
-        /*
-        .then(validateSource)   // allowed access?
-        .then(renderSource)     // ... do what?
-        .then(getState)         // retrieve state from URLs
-        .then(validateState)    // allowed access? > validate what's to be shown?
-        .then(renderState)      // render State > calls a UI builder?
-        */;
+        .then(validateSource)
+        .then(renderSource)
+        .then(getState)
+        .then(validateState)
+        .then(renderState);
     }
 
     // error handler
@@ -111,7 +180,8 @@
       hasher = my_hasher;
       storage = my_storage;
 
-      return Promise.resolve();
+      // pass emtpy object as initial http_response
+      return Promise.resolve({});
     }
 
     /* ==================================================================== */
@@ -132,13 +202,9 @@
     }])
       .spread(assignVariables)
       .then(runner)
-      /*
-      .then(getStorageLocation)
-      .then(retrieveAppConfiguration)
-      .then(initializeApplicationStorage)
-      .then(initializeApplication)
-      */
-      .caught(handleErrors);
+
+      // let this be the only error handler!
+      .then(undefined, handleErrors);
 
   });
 
