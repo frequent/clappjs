@@ -333,7 +333,56 @@
       }
     };
 
+    /**
+     * When no storage is available, this will fetch the appropriate module
+     * and help setting up storage. Will only pass back to loop when storage
+     * has been created
+     * @method  setupStorage
+     * @param   {String}    my_url_param      URL parameter if available
+     * @param   {Object}    my_hate_response  HTTP response object
+     * @returns {Object}    generated storage
+     */
+    storage.setupStorage = function (my_url_param, my_hate_response) {
+      return storage.resolveLocation(my_url_param) ||
+        storage.recoverStorage(my_hate_response);
+    }
+    
+        /**
+     * Try to resolve storage location from URL and create location
+     * @method  resolveLocation
+     * @param   {String}  my_url_param  URL parameter retrieved
+     * @returns {Object}  generated storage
+     */
+    storage.resolveLocation = function (my_url_param) {
+      var flux, spec;
 
+      try {
+        spec = JSON.parse(util.decode(atob(my_url_param)));
+
+        // TODO: FIX
+//         flux = storage.createStorage("flux");
+//
+//
+//         return flux.post({
+//           "portal_type": 'storage_location'
+//         }).then(function (my_location) {
+//           return storage.saveStorageTree(my_location._id, spec, flux);
+//         }).then(function () {
+//           return storage.assembleStorageLocation(flux);
+//         }).then(function (my_location_configuration) {
+//
+//           // dipose
+//           flux = null;
+//           return storage.createStorage(my_location_configuration);
+//         });
+
+      } catch (err) {
+        return undefined;
+      }
+    };
+
+
+    
     return creator;
   });
 
