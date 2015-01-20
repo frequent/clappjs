@@ -201,7 +201,7 @@
      * @returns   {Object}    retrieved content
      */
     storage.fetchFile = function (my_name, my_storage) {
-      var src, data, param, handler;
+      var src, data;
 
       // load as a module
       function loadAsModule(my_spec) {
@@ -352,11 +352,17 @@
      * @param   {String}  my_type     Type to query
      * @param   {Array}   my_key_list Values to query
      * @param   {String}  my_key      Key for which to query values
+     * @param   {Array}   my_digest_response_list Response eventually returned
      * @returns {Object}  my_storage once all data is retrieved
      */
-    storage.digestType = function (my_storage, my_value_list, my_portal_type_list, my_key) {
-      var traversal, value_list, portal_type_list, next_key_list, 
-        next_portal_type_list, key, next_key;
+    // TODO: cleanup, rewrite syntax, so it's understandable
+    storage.digestType = function (my_storage, my_value_list,
+        my_portal_type_list, my_key, my_digest_response_list) {
+      var traversal,
+        key, value_list, portal_type_list, 
+        next_key, next_value_list, next_portal_type_list, 
+        
+        digest_response_list;
 
       // parameters for this digest call
       portal_type_list = my_portal_type_list || ["portal_definition"];
@@ -365,7 +371,10 @@
 
       // placeholders for dependency query built during traversal
       next_portal_type_list = [];
-      next_key_list = [];
+      next_value_list = [];
+      
+      // final response list
+      digest_response_list = my_digest_response_list || [];
 
       // this is the traversing promise. If a response has kids that need to
       // be queried, the resolve of the parent is passed to the child in a
@@ -373,14 +382,17 @@
       // is resolved which resolves all parent promises while traversing up
       traversal = new Promise(function (resolve, reject) {
 
-        function handler(my_pass_store, my_query, my_parent_resolve, my_parent_reject) {
+        function handler(my_pass_store, my_query, my_parent_resolve, my_parent_reject, my_handler_response) {
           return storage.query(my_pass_store, my_query)
             .then(function (my_response) {
               var i, j, len_i, len_j, deps, iter, kids, pending_list, pender,
-                content;
+                content, return_list;
 
               // fetch content from HATE response
               content = my_response.contents || [];
+              
+              // add to global response
+              return_list = my_handler_response.concat(content);
 
               // kids will be fetched here via new handler() calls
               pending_list = [];
@@ -399,19 +411,21 @@
                   }
 
                   next_key = iter.dependent_reference_field;
-                  if (next_key_list.indexOf(iter[next_key]) === -1) {
-                    next_key_list.push(iter[next_key]);
+                  if (next_value_list.indexOf(iter[next_key]) === -1) {
+                    next_value_list.push(iter[next_key]);
                   }
                 }
 
-                // kids will trigger recursive handler() calls
+                // kids will trigger recursive handler() calls. Pass along the
+                // return_list (global response)
                 if (kids !== null) {
                   pender = new Promise(function (pending_resolve, pending_reject) {
                     handler(
                       my_storage,
                       buildReferenceQueryObject(portal_type_list, kids, key),
                       pending_resolve,
-                      pending_reject
+                      pending_reject,
+                      return_list
                     );
                   });
                   pending_list.push(pender);
@@ -421,25 +435,28 @@
               // once all kids have been loaded, resolve the respective parent
               return Promise.all(pending_list)
                 .then(function () {
-                  my_parent_resolve([next_key_list, next_portal_type_list, next_key]);
+                  my_parent_resolve([next_value_list, next_portal_type_list, next_key, return_list]);
                 });
             })
             // Catch errors and empty queries resulting in 404 in fallback
             // queries. Note, that jio depends on RSVP, which uses "fail" vs
             // bluebird "caught/catch". Use base promise syntax to make sure
             // the chain does not break!
+            // TODO: it should not be necessary to catch here!!!
             .then(undefined, function (my_error) {
               my_parent_reject(my_error);
             });
         }
 
         // start loading definitions: first call to handler, pass both resolve
-        // and reject, so errors can be caught
+        // and reject, so errors can be caught, also pass a global response array
+        // to hold results of this recursive call to handler
         return handler(
           my_storage,
           buildReferenceQueryObject(portal_type_list, value_list, key),
           resolve,
-          reject
+          reject,
+          digest_response_list
         );
       });
 
@@ -448,14 +465,16 @@
 
         // done, resolving the last promise returns follow up call parameters
         .then(function (my_new_digest_parameter_list) {
-          var last, param_list;
+          var param_list;
 
           param_list = [my_storage].concat(my_new_digest_parameter_list);
-          last = param_list[3];
 
-          if (last !== undefined) {
+          // not done, because next_key is defined
+          if (param_list[3] !== undefined) {
             return storage.digestType.apply(null, param_list);
           }
+          // done, return global response
+          return {"type_definition_list": param_list[4]};
         });
     }
 
@@ -501,7 +520,8 @@
       );
 
       return storage.digestType(my_store, [portal_type])
-        .then(function () {
+        .then(function (my_type_definition) {
+          console.log(my_type_definition);
           console.log("et viola");
         });
     };
