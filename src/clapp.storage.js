@@ -174,6 +174,31 @@
 
     return key_list;
   }
+  
+    /**
+    * Convert response generated in digestType into a usable format, output:
+    * {
+    *   "type_tree": {"portal_type": "foo", "child_type": [{...}]},
+    *   "type_list": [
+    *     {"portal_type": "foo", "field_list": [...], "action_list": []},
+    *     {...}
+    *   ]
+    * }
+    * @method    prettifyResponseList
+    * @param     {Array}   my_response    Response generated in digestType
+    * @returns   {Object}  response converted into usable format
+    */
+  function prettifyResponseList(my_response) {
+    var i, i_len, response_dict;
+    
+    response_dict = {};
+
+    for (i = 0, i_len = my_response.length; i < i_len; i += 1) {
+      // handle
+    }
+
+    return response_dict;
+  }
 
   /**
    * =========================================================================
@@ -358,11 +383,9 @@
     // TODO: cleanup, rewrite syntax, so it's understandable
     storage.digestType = function (my_storage, my_value_list,
         my_portal_type_list, my_key, my_digest_response_list) {
-      var traversal,
+      var traversal, digest_response_list,
         key, value_list, portal_type_list, 
-        next_key, next_value_list, next_portal_type_list, 
-        
-        digest_response_list;
+        next_key, next_value_list, next_portal_type_list;
 
       // parameters for this digest call
       portal_type_list = my_portal_type_list || ["portal_definition"];
@@ -382,17 +405,14 @@
       // is resolved which resolves all parent promises while traversing up
       traversal = new Promise(function (resolve, reject) {
 
-        function handler(my_pass_store, my_query, my_parent_resolve, my_parent_reject, my_handler_response) {
+        function handler(my_pass_store, my_query, my_parent_resolve, my_parent_reject) {
           return storage.query(my_pass_store, my_query)
             .then(function (my_response) {
               var i, j, len_i, len_j, deps, iter, kids, pending_list, pender,
-                content, return_list;
+                content;
 
               // fetch content from HATE response
               content = my_response.contents || [];
-              
-              // add to global response
-              return_list = my_handler_response.concat(content);
 
               // kids will be fetched here via new handler() calls
               pending_list = [];
@@ -416,16 +436,14 @@
                   }
                 }
 
-                // kids will trigger recursive handler() calls. Pass along the
-                // return_list (global response)
+                // kids will trigger recursive handler() calls
                 if (kids !== null) {
                   pender = new Promise(function (pending_resolve, pending_reject) {
                     handler(
                       my_storage,
                       buildReferenceQueryObject(portal_type_list, kids, key),
                       pending_resolve,
-                      pending_reject,
-                      return_list
+                      pending_reject
                     );
                   });
                   pending_list.push(pender);
@@ -434,7 +452,20 @@
 
               // once all kids have been loaded, resolve the respective parent
               return Promise.all(pending_list)
-                .then(function () {
+                .then(function (my_kids_response_list) {
+                  var return_list, i, i_len;
+                  
+                  // merge what kids return
+                  // TODO: how to merge n arrays in a single command
+                  if (my_kids_response_list.length === 0) {
+                    return_list = content;
+                  } else {
+                    return_list = content;
+                    for (i = 0, i_len = my_kids_response_list.length; i < i_len; i += 1) {
+                      return_list = return_list.concat(my_kids_response_list[i][3]);
+                    }
+                  }
+
                   my_parent_resolve([next_value_list, next_portal_type_list, next_key, return_list]);
                 });
             })
@@ -451,30 +482,45 @@
         // start loading definitions: first call to handler, pass both resolve
         // and reject, so errors can be caught, also pass a global response array
         // to hold results of this recursive call to handler
+        
+        /*
+          So if I pass the global response into handler it will be propagated
+          to all children. To work each call to handler should return one result
+          only so for storage-spec it's only 1 call, for definition and handler
+          it's two calls to handler and then no more.
+          
+          So if initially I pass an empty array to handler [] my_handler_response
+          no kids, it will just be sent back with content
+          yo kids, call handler again, but I can't pass the same array to all kids
+          So always empty array and when kids, call again, when not return content
+          and in following then merge content with parent content
+        */
         return handler(
           my_storage,
           buildReferenceQueryObject(portal_type_list, value_list, key),
           resolve,
-          reject,
-          digest_response_list
+          reject
         );
       });
 
-      // start:
+      // > start:
       return traversal
 
         // done, resolving the last promise returns follow up call parameters
         .then(function (my_new_digest_parameter_list) {
           var param_list;
 
+          // add storage and update global result list (4th parameter)
           param_list = [my_storage].concat(my_new_digest_parameter_list);
-
-          // not done, because next_key is defined
+          param_list[4] = digest_response_list.concat(param_list[4]);
+          
+          // we are not done if next_key (portal_type) contains something
           if (param_list[3] !== undefined) {
             return storage.digestType.apply(null, param_list);
           }
-          // done, return global response
-          return {"type_definition_list": param_list[4]};
+
+          // all loaded, generate response and pass back to main loop
+          return prettifyResponseList(param_list[4]);
         });
     }
 
@@ -498,7 +544,7 @@
         "application_name": my_name
       };
 
-      // retrieve all storages files named in spec, then create storage
+      // load all storages as modules plus their dependencies
       return request(generateModuleSpec(retrieveStorageTypes(spec)))
         .then(function () {
           var new_store = jio.createJIO(spec);
@@ -521,7 +567,6 @@
 
       return storage.digestType(my_store, [portal_type])
         .then(function (my_type_definition) {
-          console.log(my_type_definition);
           console.log("et viola");
         });
     };
