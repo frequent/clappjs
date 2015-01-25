@@ -20,7 +20,6 @@
     var render = {};
 
     return render;
-
   });
 
 }(window, document));
