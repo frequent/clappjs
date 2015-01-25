@@ -174,7 +174,7 @@
 
     return key_list;
   }
-  
+
     /**
     * Convert response generated in digestType into a usable format, output:
     * {
@@ -186,18 +186,57 @@
     * }
     * @method    prettifyResponseList
     * @param     {Array}   my_response    Response generated in digestType
+    * @param     {Object}  my_util        Utilities object
     * @returns   {Object}  response converted into usable format
     */
-  function prettifyResponseList(my_response) {
-    var i, i_len, response_dict;
-    
-    response_dict = {};
+  function prettifyResponseList(my_response, my_util) {
+    var i, i_len, response_dict, record, type_tree, type_list, reference,
+      string = 'String';
 
-    for (i = 0, i_len = my_response.length; i < i_len; i += 1) {
-      // handle
+    function setNode (my_title, my_child_list) {
+      return {"portal_type": my_title, "child_type_list": my_child_list};
     }
 
-    return response_dict;
+    // TODO: redo, too complicated
+    function locateOnTree(my_node, my_type, my_subtree) {
+      var j, j_len, item, kids, tree = my_subtree || type_tree;
+
+      // initial call
+      if (tree === undefined) {
+        type_tree = setNode(my_type, my_node.child_portal_type_list);
+        return;
+      }
+
+      kids = tree.child_type_list || [];
+      for (j = 0, j_len = kids.length; j < j_len; j += 1) {
+        item = tree.child_type_list[j];
+        if (item === my_type) {
+          tree.child_type_list[j] = setNode(my_type, my_node.child_portal_type_list);
+        } else {
+          if (my_util.typeOf(item, string) !== true) {
+            locateOnTree(my_node, my_type, item);
+          }
+        }
+      }
+    }
+
+    // loop to retrieve portal definitions and set list
+    type_list = [];
+    for (i = 0, i_len = my_response.length; i < i_len; i += 1) {
+      record = my_response[i];
+      if (record.portal_type === "portal_definition") {
+        reference = record.reference_portal_type;
+        locateOnTree(record, reference);
+        type_list.push({
+          "portal_type": reference,
+          "action_list": [],
+          "field_list": []
+        });
+      }
+    }
+
+    console.log({"type_tree": type_tree, "type_list": type_list})
+    return {"type_tree": type_tree, "type_list": type_list};
   }
 
   /**
@@ -384,7 +423,7 @@
     storage.digestType = function (my_storage, my_value_list,
         my_portal_type_list, my_key, my_digest_response_list) {
       var traversal, digest_response_list,
-        key, value_list, portal_type_list, 
+        key, value_list, portal_type_list,
         next_key, next_value_list, next_portal_type_list;
 
       // parameters for this digest call
@@ -395,7 +434,7 @@
       // placeholders for dependency query built during traversal
       next_portal_type_list = [];
       next_value_list = [];
-      
+
       // final response list
       digest_response_list = my_digest_response_list || [];
 
@@ -454,7 +493,7 @@
               return Promise.all(pending_list)
                 .then(function (my_kids_response_list) {
                   var return_list, i, i_len;
-                  
+
                   // merge what kids return
                   // TODO: how to merge n arrays in a single command
                   if (my_kids_response_list.length === 0) {
@@ -482,13 +521,13 @@
         // start loading definitions: first call to handler, pass both resolve
         // and reject, so errors can be caught, also pass a global response array
         // to hold results of this recursive call to handler
-        
+
         /*
           So if I pass the global response into handler it will be propagated
           to all children. To work each call to handler should return one result
           only so for storage-spec it's only 1 call, for definition and handler
           it's two calls to handler and then no more.
-          
+
           So if initially I pass an empty array to handler [] my_handler_response
           no kids, it will just be sent back with content
           yo kids, call handler again, but I can't pass the same array to all kids
@@ -513,14 +552,14 @@
           // add storage and update global result list (4th parameter)
           param_list = [my_storage].concat(my_new_digest_parameter_list);
           param_list[4] = digest_response_list.concat(param_list[4]);
-          
+
           // we are not done if next_key (portal_type) contains something
           if (param_list[3] !== undefined) {
             return storage.digestType.apply(null, param_list);
           }
 
           // all loaded, generate response and pass back to main loop
-          return prettifyResponseList(param_list[4]);
+          return prettifyResponseList(param_list[4], util);
         });
     }
 
