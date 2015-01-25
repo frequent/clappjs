@@ -14,9 +14,9 @@
   /**
    * @description | Retrieve all storage types declared in a storage definition
    * @method      | retrieveStorageTypes
-   * @param       | {object}  my_storage_definition  Storage definition
-   * @param       | {array}   my_type_array          Array of types found
-   * @returns     | {array}   Array of types found
+   * @param       | {object}, my_storage_definition, Storage definition
+   * @param       | {array},  my_type_array,         Array of types found
+   * @returns     | {array},  Array of types found
    **/
   function retrieveStorageTypes(my_storage_definition, my_type_array) {
     var sub, arr, set, i, len, storage_type;
@@ -45,8 +45,8 @@
   /**
    * @description | Expand storage definition types to full module spec
    * @method      | generateModuleSpec
-   * @param       | {array}   my_name_list  List of modules to load
-   * @returns     | {array}   List of modules with full spec
+   * @param       | {array}, my_name_list,    List of modules to load
+   * @returns     | {array}, List of modules with full spec
    **/
   function generateModuleSpec(my_name_list) {
     var i, len, item;
@@ -71,8 +71,8 @@
    * @description |   [{...}, {...}]
    * @description | ]
    * @method      | buildQuery
-   * @param       | {object}  my_query_dict    Query parameters
-   * @returns     | {string}  query string
+   * @param       | {object}, my_query_dict,    Query parameters
+   * @returns     | {string}, query string
    **/
   // TODO: Keep synatx, make generic
   function buildQuery(my_query_dict) {
@@ -123,9 +123,9 @@
    * @description | key=[module] and this method constructs the query object 
    * @description | necessary to look for objects defining this module
    * @method      | buildReferenceQueryObject
-   * @param       | {array}   my_portal_type_list   portal types list to query
-   * @param       | {array}   my_reference_list     list of values to query
-   * @param       | {string}  my_key                key to query values for
+   * @param       | {array},  my_portal_type_list,  portal types list to query
+   * @param       | {array},  my_reference_list,    list of values to query
+   * @param       | {string}, my_key,               key to query values for
    * @returns     | query object
    **/
   // TODO: redo the section of assembling queries, keep syntax, make generic
@@ -149,8 +149,8 @@
   /**
    * @description | Retrieve keys from a query dict
    * @method      | getQueryKeys
-   * @param       | {array}   my_mock_query_list    Query raw syntax
-   * @returns     | {array}   key_list
+   * @param       | {array},   my_mock_query_list,    Query raw syntax
+   * @returns     | {array},   key_list
    **/
   // TODO: make generic
   function getQueryKeys(my_query_list) {
@@ -183,9 +183,9 @@
     * @description |   "base_dict: {"string_field": {...}}
     * @description | }
     * @method      | prettifyResponseList
-    * @param       | {array}   my_response    Response generated in digestType
-    * @param       | {object}  my_util        Utilities object
-    * @returns     | {object}  response converted into usable format
+    * @param       | {array},   my_response,    Response generated in digestType
+    * @param       | {object},  my_util,        Utilities object
+    * @returns     | {object},  response converted into usable format
     */
   function prettifyResponseList(my_response, my_util) {
     var type_tree, type_list, base_dict, string = 'String';
@@ -296,9 +296,9 @@
     /**
      * @description | Fetch and store a file as a module or from disk
      * @method      | fetchFile
-     * @param       | {string}    my_name     Name of file
-     * @param       | {object}    my_storage  Storage to save result to
-     * @returns     | {promise}   resolve with retrieved content
+     * @param       | {string},    my_name,     Name of file
+     * @param       | {object},    my_storage,  Storage to save result to
+     * @returns     | {promise},   resolve with retrieved content
      **/
     storage.fetchFile = function (my_name, my_storage) {
       var src, data;
@@ -365,10 +365,10 @@
      * @description | Retrieve a defintion from storage, try to load as module 
      * @description | or from file
      * @method      | query
-     * @param       | {object}  my_storage      Storage to query
-     * @param       | {string}  my_query_dict   Query parameters
-     * @param       | {object}  my_param_dict   Request parameters
-     * @returns     | {promise} resolve with query result
+     * @param       | {object},  my_storage,      Storage to query
+     * @param       | {string},  my_query_dict,   Query parameters
+     * @param       | {object},  my_param_dict,   Request parameters
+     * @returns     | {promise}, resolve with query result
      **/
     storage.query = function (my_storage, my_query_dict, my_param_dict) {
       var query;
@@ -452,12 +452,12 @@
      * @description | be queried once all required definitions have been loaded
      * @description | (eg. portal definition > portal actions)
      * @method      | digestType
-     * @param       | {object}  my_storage  Storage to query
-     * @param       | {string}  my_type     Type to query
-     * @param       | {array}   my_key_list Values to query
-     * @param       | {string}  my_key      Key for which to query values
-     * @param       | {array}   my_digest_response_list Response returned at end
-     * @returns     | {promise} resolve with my_storage when done
+     * @param       | {object},  my_storage,  Storage to query
+     * @param       | {string},  my_type,     Type to query
+     * @param       | {array},   my_key_list, Values to query
+     * @param       | {string},  my_key,      Key for which to query values
+     * @param       | {array},   my_digest_response_list, Response returned at end
+     * @returns     | {promise}, resolve with my_storage when done
      **/
     // TODO: cleanup, rewrite syntax, so it's understandable
     storage.digestType = function (my_storage, my_value_list,
@@ -603,9 +603,9 @@
      * @description | be fetched based on the defined spec before creating and 
      * @description | returning the storage.
      * @method      | createStorage
-     * @param       | {string}    my_name   Name of the storage
-     * @param       | {object}    my_config Storage configuration
-     * @returns     | {promise}   resolve with generated storage
+     * @param       | {string},    my_name,   Name of the storage
+     * @param       | {object},    my_config, Storage configuration
+     * @returns     | {promise},   resolve with generated storage
      **/
     storage.createStorage = function (my_name, my_config) {
       var spec;
@@ -629,9 +629,9 @@
     /**
      * @description | Retrieve data from storage (structural and data)
      * @method      | retrieveData
-     * @param       | {object}  my_store            storage to access
-     * @param       | {object}  my_http_response    http response object
-     * @returns     | {promise} resolve with structural info and data for render
+     * @param       | {object},  my_store,            storage to access
+     * @param       | {object},  my_http_response,    http response object
+     * @returns     | {promise}, resolve with structural info and data for render
      **/
     storage.retrieveData = function (my_store, my_http_response) {
       var portal_type = hasher.getUrlQueryParam(
