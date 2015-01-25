@@ -18,12 +18,12 @@
     var util = {};
 
     /**
-     * Extend an object with another object
-     * @method  extend
-     * @param   {Object}  my_base_dict    Base object
-     * @param   {Object}  my_extend_dict  Extension object
-     * @returns {Object}  extended object
-     */
+      * @description | Extend an object with another object
+      * @method      | extend
+      * @param       | {object}, my_base_dict,    Base object
+      * @param       | {object}, my_extend_dict,  Extension object
+      * @returns     | {object},  extended object
+      **/
     util.extend = function (my_base_dict, my_extended_dict) {
       var param;
 
@@ -33,17 +33,19 @@
         }
       }
       return my_base_dict;
-    }
+    };
 
     /**
-     * Property type detection.
-     * thx: http://requirejs.org/docs/release/2.1.15/comments/require.js
-     * thx: https://github.com/fxa/uritemplate-js
-     * @method  typeOf
-     * @param   {[any]}   my_value Object|String|Function|Array|Boolean|Number
-     * @param   {String}  my_type   Type to test for
-     * @returns {Boolean} true/undefined
-     */
+     * @description | Property type detection. Use either by 
+     * @description | typeOf(my_value) > returns [object ...]
+     * @description | typeOf(my_value, "string") > returns true
+     * @thanks      | requirejs, http://requirejs.org/
+     * @thanks      | uritemplate, https://github.com/fxa/uritemplate-js
+     * @method      | typeOf
+     * @param       | {},        my_value,  Value to be tested
+     * @param       | {string},  my_type,   Type to test for
+     * @returns     | {boolean}, true/undefined
+     **/
     util.typeOf = function (my_value, my_type) {
 
       // handle switch 
@@ -53,17 +55,18 @@
 
       // handle single tests
       if (Object.prototype.toString.call(my_value) ===
-        '[object ' + my_type + ']') {
-          return true;
+          '[object ' + my_type + ']') {
+        return true;
       }
     };
 
     /**
-     * global error handler
-     * thx: renderJS - http://bit.ly/1zSQQX5
-     * @method    error
-     * @param     {Object}    my_error   Error object
-     */
+      * @description | global error handler
+      * @thanks      | renderJS - http://bit.ly/1zSQQX5
+      * @method      | error
+      * @param       | {object}, my_error,   Error object
+      * @returns     | {object}, error thrown
+      **/
     // TODO: log where?
     util.error = function (my_error) {
       switch (my_error.constructor) {
@@ -91,10 +94,11 @@
     };
 
     /**
-     * Generate an internal utility UUID
-     * @method    uuid
-     * @returns   {String}  UUID
-     */
+      * @description | Generate an internal utility UUID
+      * @method      | uuid
+      * @returns     | {string}  UUID
+      **/
+    // TODO: remove once delayed trigger is fixed
     util.uuid = function () {
       function S4() {
         return ('0000' + Math.floor(
@@ -106,11 +110,11 @@
     };
 
     /**
-     * parse JSON if response is not automatically parsed by browser
-     * @method  parse
-     * @param   {Object/String} data   Data to parse
-     * @return  {Object} Parsed object
-     */
+      * @description | parse JSON if not automatically parsed (chrome)
+      * @method      | parse
+      * @param       | {object/String}, data,   Data to parse
+      * @return      | {object}, Parsed object
+      **/
     util.parse = function (data) {
       if (util.typeOf(data, 'String')) {
         return JSON.parse(data);
@@ -119,14 +123,16 @@
     };
 
     /**
-     * Add an event listener to an element and provide a callback to
-     * run when this listener fires
-     * @method  startListenTo
-     * @param   {Object}  target    Element to attach event to
-     * @param   {String}  type      Name of the event
-     * @param   {Method}  callback  Callback function to run on event
-     * @capture {Boolean} capture   UseCapture
-     */
+      * @description | Add an event listener to an element and provide a 
+      * @description | callback to run when this listener fires
+      * @method      | startListenTo
+      * @param       | {object},  target,    Element to attach event to
+      * @param       | {string},  type,      Name of the event
+      * @param       | {method},  callback,  Callback function to run on event
+      * @param       | {boolean}, capture,   UseCapture
+      * @returns     | {promise}, resolving with ...
+      **/
+    // TODO: Fix & Test!
     util.startListenTo = function (target, type, callback, capture) {
       if (target.addEventListener) {
         target.addEventListener(type, callback, capture || false);
@@ -140,13 +146,15 @@
     };
 
     /**
-     * Remove an event listener from an element
-     * @method  stopListenTo
-     * @param   {Object}  target    Element to attach event to
-     * @param   {String}  type      Name of the event
-     * @param   {Method}  callback  Callback function to run on event
-     * @capture {Boolean} capture   UseCapture
-     */
+      * @description | Remove an event listener from an element
+      * @method      | stopListenTo
+      * @param       | {object},  target,    Element to attach event to
+      * @param       | {string},  type,      Name of the event
+      * @param       | {method},  callback,  Callback function to run on event
+      * @param       | {Boolean}, capture,   UseCapture
+      * @returns     | {Promise}, resolving with ...
+      **/
+    // TODO: Fix&Test!
     util.stopListenTo = function (target, type, callback, capture) {
       if (target.removeEventListener) {
         target.removeEventListener(type, callback, capture || false);
@@ -158,14 +166,15 @@
     };
 
     /**
-     * Promise-optimized Ajax
-     * thx: jIO - http://www.j-io.org/ | thx: renderJS - http://bit.ly/1zSQQX5
-     * info: oReilly http://bit.ly/1q2HAsn Browser networking
-     * @method ajax
-     * @param   {Object}   my_param           Ajax parameters
-     * @param   {Integer}  my_resolve_error   Don't break on error
-     * @return  {Promise} A Promise
-     */
+      * @description | Promise-optimized Ajax
+      * @thanks      | jIO - http://www.j-io.org/
+      * @thanks      | renderJS - http://renderjs.org/
+      * @method      | ajax
+      * @param       | {object},   my_param,         Ajax parameters
+      * @param       | {integer},  my_resolve_error, Don't break on error
+      * @return      | {promise},  resolving with ajax response
+      **/
+    // TODO: Broken, fix and test!
     util.ajax = function (my_param, my_resolve_error) {
       var xhr;
 
@@ -227,15 +236,17 @@
     };
 
     /**
-     * Listener that is removed on first trigger, similar to jQuery "one"
-     * thx: renderJS - http://bit.ly/1zSQQX5
-     * @method promiseEventListener
-     * @method  loopEventListener
-     * @param   {Object}  target        DOM Element/Object to set listener
-     * @param   {String}  type          Type of event
-     * @param   {Boolean} useCapture    Use capture
-     * @return  {Promise} Promise Object
-     */
+      * @description | Listener that is removed on first trigger, 
+      * @description | similar to jQuery "one"
+      * @thanks      | renderJS - http://renderjs.org
+      * @method      | promiseEventListener
+      * @method      | loopEventListener
+      * @param       | {object},  target,      DOM Object to set listener
+      * @param       | {string},  type,        Type of event
+      * @param       | {boolean}, useCapture,  Use capture
+      * @return      | {promise}, resolving with...
+      **/
+    // TODO: also broken :-(
     util.promiseEventListener = function (target, type, useCapture) {
       var event_callback;
 
@@ -258,17 +269,18 @@
     };
 
     /**
-     * Set an infinite event listener (promise will never be resolved)
-     * Remove listener by cancelling promise.
-     * thx: renderJS - http://bit.ly/1zSQQX5
-     * @method loopEventListener
-     * @param   {Object}  target        DOM Element/Object to set listener
-     * @param   {String}  type          Type of event
-     * @param   {Boolean} useCapture    Use capture
-     * @param   {Function}callback      Callback method
-     * @param   {Boolean} allowDefault  Allow to preventDefault
-     * @returns {Promise} Promise object
-     */
+      * @description | Set an infinite event listener (promise will never be 
+      * @description | resolved) Remove listener by cancelling promise.
+      * @thanks      | renderJS - http://renderjs.org/
+      * @method      | loopEventListener
+      * @param       | {object},  target,       DOM Object to set listener
+      * @param       | {string},  type,         Type of event
+      * @param       | {boolean}, useCapture,   Use capture
+      * @param       | {method},  callback,     Callback method
+      * @param       | {boolean}, allowDefault, Allow to preventDefault
+      * @returns     | {promise}, resolving with ...
+      **/
+    // TODO: test
     util.loopEventListener = function (target, type, useCapture, callback,
                                     allowDefault) {
       var event_callback, callback_promise;
@@ -318,17 +330,19 @@
     };
 
     /**
-     * Delay an event from triggering for a set amount of time
-     * This will run through loopEventLister and start/stopListen to
-     * @method  delayedEventTrigger
-     * @param   {Integer} ms  Delay in milliseconds
-     * @param   {Object}  target        DOM Element/Object to set listener
-     * @param   {String}  type          Type of event
-     * @param   {Boolean} useCapture    Use capture
-     * @param   {Function}callback      Callback method
-     * @param   {Boolean} allowDefault  Allow to preventDefault
-     * @returns {Promise} A promise
-     */
+      * @description | Delay an event from triggering for a set amount of time
+      * @description | This will run through loopEventLister and start/
+      * @description | stopListen to
+      * @method      | delayedEventTrigger
+      * @param       | {integer}, ms,           Delay in milliseconds
+      * @param       | {object},  target,       DOM Object to set listener
+      * @param       | {string},  type,         Type of event
+      * @param       | {boolean}, useCapture,   Use capture
+      * @param       | {method},  callback,     Callback method
+      * @param       | {boolean}, allowDefault, Allow to preventDefault
+      * @returns     | {promise}, resolving with ...
+      **/
+    // TODO: Use version recently done on other project!
     util.delayedEventTrigger = function (ms, target, type, useCapture,
                                               callback, allowDefault) {
       var uuid, tagged_type, wrapped_callback;
@@ -367,12 +381,12 @@
     };
 
     /**
-     * Wrap readAsText into a promise
-     * thx: renderJS - http://bit.ly/1zSQQX5
-     * @method    promiseReadAsText
-     * @param     {String}  file    Filename to read (asText)
-     * @returns   {Promise} Promise object
-     */
+      * @description | Wrap readAsText into a promise
+      * @thanks      | renderJS - http://renderjs.org/
+      * @method      | promiseReadAsText
+      * @param       | {string},  file,    Filename to read (asText)
+      * @returns     | {promise}, resolving with ...
+      **/
     util.promiseReadAsText = function (file) {
       return new Promise(function (resolve, reject) {
         var reader = new FileReader();
