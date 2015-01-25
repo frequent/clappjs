@@ -190,8 +190,15 @@
     * @returns   {Object}  response converted into usable format
     */
   function prettifyResponseList(my_response, my_util) {
-    var i, i_len, response_dict, record, type_tree, type_list, reference,
-      string = 'String';
+    var type_tree, type_list, base_dict, string = 'String';
+
+    function loopRecordSet(my_callback) {
+      var i, i_len;
+
+      for (i = 0, i_len = my_response.length; i < i_len; i += 1) {
+        my_callback(my_response[i]);
+      }
+    }
 
     function setNode (my_title, my_child_list) {
       return {"portal_type": my_title, "child_type_list": my_child_list};
@@ -221,22 +228,48 @@
     }
 
     // loop to retrieve portal definitions and set list
+    // TODO: store actions and fields in list or dict? Best way to store base
     type_list = [];
-    for (i = 0, i_len = my_response.length; i < i_len; i += 1) {
-      record = my_response[i];
-      if (record.portal_type === "portal_definition") {
-        reference = record.reference_portal_type;
-        locateOnTree(record, reference);
+    base_dict = {};
+    loopRecordSet(function (my_record) {
+      var reference;
+      switch (my_record.portal_type) {
+        case "base_fields":
+        base_dict[my_record.reference_portal_type] = my_record;
+          break;
+        case "portal_definition":
+        reference = my_record.reference_portal_type;
+        locateOnTree(my_record, reference);
         type_list.push({
           "portal_type": reference,
           "action_list": [],
           "field_list": []
         });
+          break;
       }
-    }
+    });
 
-    console.log({"type_tree": type_tree, "type_list": type_list})
-    return {"type_tree": type_tree, "type_list": type_list};
+    // can't be sure definitions come in first, so reloop to add fields/actions
+    // TODO: not generic! No hardcoding field/actions/bla
+    loopRecordSet(function (my_record) {
+      var j, j_len, item, reference = my_record.reference_portal_type;
+
+      for (j = 0, j_len = type_list.length; j < j_len; j += 1) {
+        item = type_list[j];
+        if (my_record.reference_portal_type === item.portal_type) {
+          switch (my_record.portal_type) {
+            case "portal_field": item.field_list.push(my_record); break;
+            case "portal_action": item.action_list.push(my_record); break;
+          }
+        }
+      }
+    });
+
+    return {
+      "type_tree": type_tree,
+      "type_list": type_list,
+      "base_dict": base_dict
+    };
   }
 
   /**
