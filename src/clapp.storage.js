@@ -1,6 +1,6 @@
 /*jslint indent: 2, maxlen: 80, nomen: true, todo: true */
-/*global window, document, declare, atob, JSON */
-(function (window, document, JSON, atob) {
+/*global console, declare, request */
+(function (console, declare, request) {
   "use strict";
 
   /* ====================================================================== */
@@ -12,12 +12,12 @@
   /* ====================================================================== */
 
   /**
-   * Retrieve all storage types declared in a storage definition
-   * @method  retrieveStorageTypes
-   * @param   {Object}  my_storage_definition  Storage definition
-   * @param   {Array}   my_type_array          Array of types found
-   * @returns {Array}   Array of types found
-   */
+   * @description | Retrieve all storage types declared in a storage definition
+   * @method      | retrieveStorageTypes
+   * @param       | {object}  my_storage_definition  Storage definition
+   * @param       | {array}   my_type_array          Array of types found
+   * @returns     | {array}   Array of types found
+   **/
   function retrieveStorageTypes(my_storage_definition, my_type_array) {
     var sub, arr, set, i, len, storage_type;
 
@@ -43,45 +43,40 @@
   }
 
   /**
-   * Expand storage definition types to full module spec
-   * @method  generateModuleSpec
-   * @param   {Array}   my_name_list  List of modules to load
-   * @returns {Array}   List of modules with full spec
-   */
+   * @description | Expand storage definition types to full module spec
+   * @method      | generateModuleSpec
+   * @param       | {array}   my_name_list  List of modules to load
+   * @returns     | {array}   List of modules with full spec
+   **/
   function generateModuleSpec(my_name_list) {
     var i, len, item;
 
     for (i = 0, len = my_name_list.length; i < len; i += 1) {
       item = my_name_list[i];
       my_name_list[i] = {
-          "name": item,
-          "src": '../../lib/jio/' + item + '.js',
-          "shim": true
-        }
+        "name": item,
+        "src": '../../lib/jio/' + item + '.js',
+        "shim": true
+      };
     }
 
     return my_name_list;
   }
 
   /**
-   * Build a qury string from parameters passed
-   * First pass at an API:
-   *  [
-   *    [
-   *      {"pt": ["foo", "bar"]},
-   *      {"op": "AND", "cous": ["123"]}
-   *    ],
-   *    [{"op": "NOT"}],
-   *    [{...}, {...}]
-   *  ]
-   *
-   * @method  buildQuery
-   * @param   {Object}  my_query_dict    Query parameters
-   * @returns {String}  query string
-   */
+   * @description | Build a qury string from parameters passed
+   * @description | [
+   * @description |   [{"pt": ["foo", "bar"]}, {"op": "AND", "cous": ["123"]}],
+   * @description |   [{"op": "NOT"}],
+   * @description |   [{...}, {...}]
+   * @description | ]
+   * @method      | buildQuery
+   * @param       | {object}  my_query_dict    Query parameters
+   * @returns     | {string}  query string
+   **/
   // TODO: Keep synatx, make generic
   function buildQuery(my_query_dict) {
-    var i, j, k, key, len, block_len, block, section, query;
+    var i, j, k, len, block_len, block, section, query;
 
     // NOTE: my_input will be string (operator) or array ([value_list])!
     function iterator(my_key, my_value, my_input) {
@@ -116,26 +111,27 @@
     query = query
       .replace('( AND )', ' AND ', "g")
       .replace('( OR )', ' OR ', "g")
-      .replace('( NOT )', ' NOT ', "g")
+      .replace('( NOT )', ' NOT ', "g");
 
     return {"query": query};
   }
 
   /**
-   * Build a reference query object, which will then be converted into
-   * the actual query synatax from storage.query buildQuery call. Method
-   * is necessary, because URL will just contain a key=[module] and this
-   * method constructs the query object necessary to look for objects defining
-   * this module
-   * @method  buildReferenceQueryObject
-   * @param   {Array}     my_portal_type_list   list of portal types to query
-   * @param   {Array}     my_reference_list     list of values to query
-   * @param   {String}    my_key                key to query values for
-   * @returns query object
-   */
-  // TODO: redo the whole section of assembling queries, keep syntax, make generic
-  function buildReferenceQueryObject(my_portal_type_list, my_reference_list, my_key) {
-    var i, len, obj, query_object
+   * @description | Build a reference query object which will then be converted
+   * @description | into the actual query from storage.query buildQuery call. 
+   * @description | Method is necessary, because URL will just contain a 
+   * @description | key=[module] and this method constructs the query object 
+   * @description | necessary to look for objects defining this module
+   * @method      | buildReferenceQueryObject
+   * @param       | {array}   my_portal_type_list   portal types list to query
+   * @param       | {array}   my_reference_list     list of values to query
+   * @param       | {string}  my_key                key to query values for
+   * @returns     | query object
+   **/
+  // TODO: redo the section of assembling queries, keep syntax, make generic
+  function buildReferenceQueryObject(my_portal_type_list, my_reference_list,
+    my_key) {
+    var i, len, obj, query_object;
 
     query_object = [];
     for (i = 0, len = my_portal_type_list.length; i < len; i += 1) {
@@ -148,19 +144,20 @@
     }
 
     return query_object;
-   }
+  }
 
   /**
-   * Retrieve keys from a query dict
-   * @method    getQueryKeys
-   * @param     {Array}   my_mock_query_list    Query raw syntax
-   * @returns   {Array}   key_list
-   */
+   * @description | Retrieve keys from a query dict
+   * @method      | getQueryKeys
+   * @param       | {array}   my_mock_query_list    Query raw syntax
+   * @returns     | {array}   key_list
+   **/
   // TODO: make generic
   function getQueryKeys(my_query_list) {
     var i, i_len, j, j_len, param, key_list, query_dict, query_element;
 
-    for (key_list = [], i = 0, i_len = my_query_list.length; i < i_len; i += 1) {
+    for (i = 0, i_len = my_query_list.length; i < i_len; i += 1) {
+      key_list = key_list || [];
       query_element = my_query_list[i];
       for (j = 0, j_len = query_element.length; j < j_len; j += 1) {
         query_dict = query_element[j];
@@ -175,19 +172,20 @@
     return key_list;
   }
 
-    /**
-    * Convert response generated in digestType into a usable format, output:
-    * {
-    *   "type_tree": {"portal_type": "foo", "child_type": [{...}]},
-    *   "type_list": [
-    *     {"portal_type": "foo", "field_list": [...], "action_list": []},
-    *     {...}
-    *   ]
-    * }
-    * @method    prettifyResponseList
-    * @param     {Array}   my_response    Response generated in digestType
-    * @param     {Object}  my_util        Utilities object
-    * @returns   {Object}  response converted into usable format
+  /**
+    * @description | Convert digestType response into a usable format, output:
+    * @description | {
+    * @description |   "type_tree": {"pt": "foo", "child_type": [{...}]},
+    * @description |   "type_list": [
+    * @description |     {"pt": "foo", "field_list": [...], "action_list": []},
+    * @description |     {...}
+    * @description |   ],
+    * @description |   "base_dict: {"string_field": {...}}
+    * @description | }
+    * @method      | prettifyResponseList
+    * @param       | {array}   my_response    Response generated in digestType
+    * @param       | {object}  my_util        Utilities object
+    * @returns     | {object}  response converted into usable format
     */
   function prettifyResponseList(my_response, my_util) {
     var type_tree, type_list, base_dict, string = 'String';
@@ -200,7 +198,7 @@
       }
     }
 
-    function setNode (my_title, my_child_list) {
+    function setNode(my_title, my_child_list) {
       return {"portal_type": my_title, "child_type_list": my_child_list};
     }
 
@@ -218,7 +216,8 @@
       for (j = 0, j_len = kids.length; j < j_len; j += 1) {
         item = tree.child_type_list[j];
         if (item === my_type) {
-          tree.child_type_list[j] = setNode(my_type, my_node.child_portal_type_list);
+          tree.child_type_list[j] =
+            setNode(my_type, my_node.child_portal_type_list);
         } else {
           if (my_util.typeOf(item, string) !== true) {
             locateOnTree(my_node, my_type, item);
@@ -234,10 +233,10 @@
     loopRecordSet(function (my_record) {
       var reference;
       switch (my_record.portal_type) {
-        case "base_fields":
+      case "base_fields":
         base_dict[my_record.reference_portal_type] = my_record;
-          break;
-        case "portal_definition":
+        break;
+      case "portal_definition":
         reference = my_record.reference_portal_type;
         locateOnTree(my_record, reference);
         type_list.push({
@@ -245,21 +244,25 @@
           "action_list": [],
           "field_list": []
         });
-          break;
+        break;
       }
     });
 
     // can't be sure definitions come in first, so reloop to add fields/actions
     // TODO: not generic! No hardcoding field/actions/bla
     loopRecordSet(function (my_record) {
-      var j, j_len, item, reference = my_record.reference_portal_type;
+      var j, j_len, item;
 
       for (j = 0, j_len = type_list.length; j < j_len; j += 1) {
         item = type_list[j];
         if (my_record.reference_portal_type === item.portal_type) {
           switch (my_record.portal_type) {
-            case "portal_field": item.field_list.push(my_record); break;
-            case "portal_action": item.action_list.push(my_record); break;
+          case "portal_field":
+            item.field_list.push(my_record);
+            break;
+          case "portal_action":
+            item.action_list.push(my_record);
+            break;
           }
         }
       }
@@ -284,48 +287,21 @@
   }, {
     "name": 'hasher',
     "src": '../../src/clapp.util.hasher'
-  },{
+  }, {
     "name": 'util',
     "src": '../../src/clapp.util.js'
   }], function (jio, hasher, util) {
     var storage = {};
 
     /**
-     * Fetch and store a file as a module or from disk
-     * @method    fetchFile
-     * @param     {String}    my_name     Name of file
-     * @param     {Object}    my_storage  Storage to save result to
-     * @returns   {Object}    retrieved content
-     */
+     * @description | Fetch and store a file as a module or from disk
+     * @method      | fetchFile
+     * @param       | {string}    my_name     Name of file
+     * @param       | {object}    my_storage  Storage to save result to
+     * @returns     | {promise}   resolve with retrieved content
+     **/
     storage.fetchFile = function (my_name, my_storage) {
       var src, data;
-
-      // load as a module
-      function loadAsModule(my_spec) {
-        return request(my_spec)
-          .then(function (my_response) {
-            var i, len, list;
-
-            // TODO: this should be done in generic response handler
-            data = my_response;
-            if (util.typeOf(data, 'Array')) {
-              list = [];
-              for (i = 0, len = data.length; i < len; i += 1) {
-                list.push(my_storage.post[i]);
-              }
-              return Promise.all(list);
-            }
-            return my_storage.post(data);
-          })
-          .then(function () {
-            return data;
-          })
-
-          // stay with basic syntax to make sure any promise lib works
-          .then(undefined, function() {
-            return loadFromDisk({"url": my_spec[0].src.slice(0, -3)});
-          });
-      }
 
       // load from disk
       function loadFromDisk(my_raw_src) {
@@ -349,6 +325,33 @@
           });
       }
 
+      // load as a module
+      function loadAsModule(my_spec) {
+        return request(my_spec)
+          .then(function (my_response) {
+            var i, len, list;
+
+            // TODO: this should be done in generic response handler
+            data = my_response;
+            if (util.typeOf(data, 'Array')) {
+              list = [];
+              for (i = 0, len = data.length; i < len; i += 1) {
+                list.push(my_storage.post[i]);
+              }
+              return Promise.all(list);
+            }
+            return my_storage.post(data);
+          })
+          .then(function () {
+            return data;
+          })
+
+          // stay with basic syntax to make sure any promise lib works
+          .then(undefined, function () {
+            return loadFromDisk({"url": my_spec[0].src.slice(0, -3)});
+          });
+      }
+
       src = 'data/' + my_name + '.json.js';
 
       // if built load as module, else from disk
@@ -356,16 +359,17 @@
         return loadAsModule([{"name": my_name, "src": src}]);
       }
       return loadFromDisk({"url": src.slice(0, -3)});
-    }
+    };
 
     /**
-     * Retrieve a defintion from storage, try to load as module or from file
-     * @method  query
-     * @param   {Object}  my_storage      Storage to query
-     * @param   {String}  my_query_dict   Query parameters
-     * @param   {Object}  my_param_dict   Request parameters
-     * @returns {Object}  query result
-     */
+     * @description | Retrieve a defintion from storage, try to load as module 
+     * @description | or from file
+     * @method      | query
+     * @param       | {object}  my_storage      Storage to query
+     * @param       | {string}  my_query_dict   Query parameters
+     * @param       | {object}  my_param_dict   Request parameters
+     * @returns     | {promise} resolve with query result
+     **/
     storage.query = function (my_storage, my_query_dict, my_param_dict) {
       var query;
 
@@ -378,8 +382,8 @@
       // make sure the chain does not break use underlying syntax
       return my_storage.allDocs(query)
         .then(function (my_result) {
-          var k, file_len, list, index, i, j, k, key, len, block_len, block,
-            section, src_list, valid_key_list, front, back, pass, param;
+          var file_len, list, index, i, j, k, len, block_len, block, section,
+            src_list, valid_key_list, front, back, param;
 
           // hold results or promises
           list = [];
@@ -402,15 +406,17 @@
               for (j = 0, block_len = block.length; j < block_len; j += 1) {
                 section = block[j];
                 for (param in section) {
-                  index = valid_key_list.indexOf(param);
-                  if (section.hasOwnProperty(param) && index > -1) {
-                    switch (index) {
+                  if (section.hasOwnProperty(param)) {
+                    index = valid_key_list.indexOf(param);
+                    if (section.hasOwnProperty(param) && index > -1) {
+                      switch (index) {
                       case 0:
                         front = section[param];
                         break;
                       case 1:
                         back = section[param];
                         break;
+                      }
                     }
                   }
                 }
@@ -430,28 +436,29 @@
               .then(function (my_result_list) {
                 return hasher.convertResponseToHate(my_result_list, query);
               });
-        }
+          }
 
-        // got something from allDoc, wrap result in proper HATE object
-        return hasher.convertResponseToHate(my_result, query);
-      });
-    }
+          // got something from allDoc, wrap result in proper HATE object
+          return hasher.convertResponseToHate(my_result, query);
+        });
+    };
 
     /**
-     * Digest a portal type by looking up portal_definition of the requested
-     * portal type and subsequent required portal types to gather all
-     * configuration objects required. The method will traverse for a
-     * respective portal type and collect information on dependent portal types
-     * which will be queried once all required definitions have been loaded
-     * (eg. portal definition > portal actions)
-     * @method  digestType
-     * @param   {Object}  my_storage  Storage to query
-     * @param   {String}  my_type     Type to query
-     * @param   {Array}   my_key_list Values to query
-     * @param   {String}  my_key      Key for which to query values
-     * @param   {Array}   my_digest_response_list Response eventually returned
-     * @returns {Object}  my_storage once all data is retrieved
-     */
+     * @description | Digest a portal type by looking up portal_definition of 
+     * @description | the requested portal type and subsequent required portal 
+     * @description | types to gather all configuration objects required. The 
+     * @description | method will traverse for a respective portal type and 
+     * @description | collect information on dependent portal types which will 
+     * @description | be queried once all required definitions have been loaded
+     * @description | (eg. portal definition > portal actions)
+     * @method      | digestType
+     * @param       | {object}  my_storage  Storage to query
+     * @param       | {string}  my_type     Type to query
+     * @param       | {array}   my_key_list Values to query
+     * @param       | {string}  my_key      Key for which to query values
+     * @param       | {array}   my_digest_response_list Response returned at end
+     * @returns     | {promise} resolve with my_storage when done
+     **/
     // TODO: cleanup, rewrite syntax, so it's understandable
     storage.digestType = function (my_storage, my_value_list,
         my_portal_type_list, my_key, my_digest_response_list) {
@@ -477,11 +484,22 @@
       // is resolved which resolves all parent promises while traversing up
       traversal = new Promise(function (resolve, reject) {
 
-        function handler(my_pass_store, my_query, my_parent_resolve, my_parent_reject) {
+        function handler(my_pass_store, my_query, my_parent_resolve,
+          my_parent_reject) {
           return storage.query(my_pass_store, my_query)
             .then(function (my_response) {
-              var i, j, len_i, len_j, deps, iter, kids, pending_list, pender,
-                content;
+              var i, j, len_i, len_j, deps, iter, kids, pending_list, content;
+
+              function makePender(my_type_list, my_kids, my_key) {
+                return new Promise(function (pending_resolve, pending_reject) {
+                  handler(
+                    my_storage,
+                    buildReferenceQueryObject(my_type_list, my_kids, my_key),
+                    pending_resolve,
+                    pending_reject
+                  );
+                });
+              }
 
               // fetch content from HATE response
               content = my_response.contents || [];
@@ -510,35 +528,31 @@
 
                 // kids will trigger recursive handler() calls
                 if (kids !== null) {
-                  pender = new Promise(function (pending_resolve, pending_reject) {
-                    handler(
-                      my_storage,
-                      buildReferenceQueryObject(portal_type_list, kids, key),
-                      pending_resolve,
-                      pending_reject
-                    );
-                  });
-                  pending_list.push(pender);
+                  pending_list.push(makePender(portal_type_list, kids, key));
                 }
               }
 
               // once all kids have been loaded, resolve the respective parent
               return Promise.all(pending_list)
                 .then(function (my_kids_response_list) {
-                  var return_list, i, i_len;
+                  var return_list, l, l_len, list = my_kids_response_list;
 
                   // merge what kids return
                   // TODO: how to merge n arrays in a single command
-                  if (my_kids_response_list.length === 0) {
+                  if (list.length === 0) {
                     return_list = content;
                   } else {
                     return_list = content;
-                    for (i = 0, i_len = my_kids_response_list.length; i < i_len; i += 1) {
-                      return_list = return_list.concat(my_kids_response_list[i][3]);
+                    for (l = 0, l_len = list.length; l < l_len; l += 1) {
+                      return_list = return_list.concat(list[l][3]);
                     }
                   }
 
-                  my_parent_resolve([next_value_list, next_portal_type_list, next_key, return_list]);
+                  my_parent_resolve([
+                    next_value_list,
+                    next_portal_type_list,
+                    next_key, return_list
+                  ]);
                 });
             })
             // Catch errors and empty queries resulting in 404 in fallback
@@ -552,21 +566,8 @@
         }
 
         // start loading definitions: first call to handler, pass both resolve
-        // and reject, so errors can be caught, also pass a global response array
+        // and reject, so errors can be caught, also pass global response array
         // to hold results of this recursive call to handler
-
-        /*
-          So if I pass the global response into handler it will be propagated
-          to all children. To work each call to handler should return one result
-          only so for storage-spec it's only 1 call, for definition and handler
-          it's two calls to handler and then no more.
-
-          So if initially I pass an empty array to handler [] my_handler_response
-          no kids, it will just be sent back with content
-          yo kids, call handler again, but I can't pass the same array to all kids
-          So always empty array and when kids, call again, when not return content
-          and in following then merge content with parent content
-        */
         return handler(
           my_storage,
           buildReferenceQueryObject(portal_type_list, value_list, key),
@@ -575,7 +576,7 @@
         );
       });
 
-      // > start:
+      // start:
       return traversal
 
         // done, resolving the last promise returns follow up call parameters
@@ -594,17 +595,18 @@
           // all loaded, generate response and pass back to main loop
           return prettifyResponseList(param_list[4], util);
         });
-    }
+    };
 
     /**
-     * Create a new storage. If nothing is specified it will be on memory.
-     * Note that all storage (js) files requested will be fetched based on
-     * the defined spec before creating and returning the storage.
-     * @method  createStorage
-     * @param   {String}    my_name   Name of the storage
-     * @param   {Object}    my_config Storage configuration
-     * @returns {Object}    generated storage
-     */
+     * @description | Create a new storage. If nothing is specified it will be 
+     * @description | on memory. Note that all storage (js) files requested will
+     * @description | be fetched based on the defined spec before creating and 
+     * @description | returning the storage.
+     * @method      | createStorage
+     * @param       | {string}    my_name   Name of the storage
+     * @param       | {object}    my_config Storage configuration
+     * @returns     | {promise}   resolve with generated storage
+     **/
     storage.createStorage = function (my_name, my_config) {
       var spec;
 
@@ -625,12 +627,12 @@
     };
 
     /**
-     * Retrieve data from storage (structural and data)
-     * @method  retrieveData
-     * @param   {Object}  my_store            storage to access
-     * @param   {Object}  my_http_response    http response object
-     * @returns {Object}  structural data and data needed to render
-     */
+     * @description | Retrieve data from storage (structural and data)
+     * @method      | retrieveData
+     * @param       | {object}  my_store            storage to access
+     * @param       | {object}  my_http_response    http response object
+     * @returns     | {promise} resolve with structural info and data for render
+     **/
     storage.retrieveData = function (my_store, my_http_response) {
       var portal_type = hasher.getUrlQueryParam(
         "key",
@@ -638,7 +640,7 @@
       );
 
       return storage.digestType(my_store, [portal_type])
-        .then(function (my_type_definition) {
+        .then(function () {
           console.log("et viola");
         });
     };
@@ -646,4 +648,4 @@
     return storage;
   });
 
-}(window, document, JSON, atob));
+}(console, declare, request));
