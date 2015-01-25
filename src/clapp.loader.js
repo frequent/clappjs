@@ -17,51 +17,57 @@ var declare, request;
   var clappjs = {
 
     /**
-      * Object containing named(!) module callback methods. If a module is
-      * declared as "foo" and has a callback (return) object/method, the
-      * callback will be accessible through this object.
-      * @property  {Object}  callback_dict
-      */
+      * @description | Object containing named(!) module callback methods. If a 
+      * @description | module is declared as "foo" and has a callback (return)
+      * @description | object/method, the callback will be accessible through 
+      * @description | this object.
+      * @property    | {object} callback_dict
+      **/
     "callback_dict": {},
 
     /**
-      * Dict containing module paths
-      * @property  {Object}  path_dict
-      */
+      * @description | Dict containing module paths
+      * @property    | {object}  path_dict
+      **/
     "path_dict": {},
 
     /**
-      * Dict containing modules dependencies
-      * @property  {Object}  dependency_dict
-      */
+      * @description | Dict containing modules dependencies
+      * @property    | {object}, dependency_dict, Object containing dependencies
+      **/
     "dependency_dict": {},
 
     /**
-      * Temporary queue preventing multiple loads in same batch
-      * @property  {Object}  queue_dict
-      */
+      * @description | Temporary queue preventing multiple loads in same batch
+      * @property    | {object}, queue_dict, Object containing modules on queue
+      **/
     "queue_dict": {},
 
     /**
-     * Working list of modules that need to be shimmed, because they don't
-     * support clappjs request/declare syntax (= all 3rd party plugins)
-     */
+      * @description | Working list of modules that need to be shimmed, because 
+      * @description | they don't support clappjs request/declare syntax (= all 
+      * @description | 3rd party plugins)
+      * @property    | {array}, shim_list, List of shimmed modules
+      **/
     "shim_list": [],
 
     /**
-     * Working list of dependencies that cannot be associated with a module
-     * that requires/defines them. List will be empties onload with all
-     * dependencies on the list "going" to the module triggering onload
-     */
+      * @description | Working list of dependencies that cannot be associated 
+      * @description | with a module that requires/defines them. List will be 
+      * @description | emptied onload with all dependencies on the list "going" 
+      * @description | to the module triggering onload
+      * @property    | {array}, untraced_list, List of untraced modules
+      **/
     "untraced_list": []
   };
 
   /**
-   * Reverse an array: ["name", [], function ()] -> [function (), [], "name"]
-   * @method  revert
-   * @param   {Array} my_array Array to reverse
-   * @return  {Array} reversed array
-   */
+   * @description | Reverse an array: 
+   * @description | ["name", [], function ()] -> [function (), [], "name"]
+   * @method      | revert
+   * @param       | {array}, my_array, Array to reverse
+   * @return      | {array}, reversed array
+   **/
   function revert(my_array) {
     var left, right, len, temporary_store;
 
@@ -78,11 +84,12 @@ var declare, request;
   }
 
   /**
-   * Return a module by name. Will only be called once module is available
-   * @method  returnModule
-   * @param   {String}  my_name    Module to return
-   * @return  {Object}  module
-   */
+   * @description | Return a module by name. Will only be called once module is 
+   * @description | available
+   * @method      | returnModule
+   * @param       | {string}, my_name, Module to return
+   * @return      | {object}, module
+   **/
   function returnModule(my_name) {
     var index, list;
 
@@ -106,14 +113,15 @@ var declare, request;
   }
 
   /**
-   * Shim around "require". Catches require calls, stores them on untraced
-   * list and associated them with the next module calling onload. Should
-   * work because require calls from inside 3rd party plugins are made when
-   * a loaded file is parsed and onload triggers when parsing is done.
-   * @method  shimRequire
-   * @param   {Array}  Arguments
-   * @returns {Array}  arguments
-   */
+    * @description | Shim around "require". Catches require calls, stores them 
+    * @description | on untraced list and associated them with the next module 
+    * @description | calling onload. Should work because require calls from 
+    * @description | inside 3rd party plugins are made when a loaded file is 
+    * @description | parsed and onload triggers when parsing is done.
+    * @method      | shimRequire
+    * @param       | {array}, arguments, Arguments passed into require call
+    * @returns     | {array}, arguments if calling require
+    **/
   function shimRequire() {
     var sync, callback, i, len, module_list, args;
 
@@ -147,13 +155,13 @@ var declare, request;
   }
 
   /**
-   * Called as a wrapper around define in case a 3rd party plugin returns a
-   * define call. This allows to wrap scripts not using request/declare into
-   * clappjs.
-   * @method  shimDefine
-   * @param   {Array}  Arguments
-   * @returns {Array}  arguments
-   */
+    * @description | Called as a wrapper around define in case a 3rd party 
+    * @description | plugin returns a define call. This allows to wrap scripts 
+    * @description | not using request/declare into clappjs.
+    * @method      | shimDefine
+    * @param       | {array}, arguments, Arguments passed into define call
+    * @returns     | {array}  arguments when invoking define
+    **/
   function shimDefine() {
     var sync, args, list, name, deps, callback, i, len;
 
@@ -182,12 +190,13 @@ var declare, request;
   }
 
   /**
-   * Digest module definition in case it is provided and allow loading regular
-   * modules through declare/request without breaking loaders such as require
-   * @method    digestModuleSpec
-   * @param     {String/Object} spec  Module (spec) to load
-   * @return    {String}    module name
-   */
+    * @description | Digest module definition in case it is provided and allow 
+    * @description | loading regular modules through declare/request without 
+    * @description | breaking loaders such as require
+    * @method      | digestModuleSpec
+    * @param       | {object}, spec,  Module (spec) to load
+    * @return      | {string}, module name
+    **/
   function digestModuleSpec(conf) {
     var name;
 
@@ -226,15 +235,15 @@ var declare, request;
   }
 
   /**
-   * Establish a loading order based on an array of passed modules to load,
-   * testing for dependencies recursively and generating bundles of files
-   * to load
-   * TODO: too complicated. Drop! If dependencies are not specified, works?
-   * @method  setLoadingOrder
-   * @param   {Array}   module_list   List of modules to list
-   * @param   {Array}   bundle_list   Response being assembled
-   * @returns {Array}   finished bundle_list
-   */
+    * @description | Establish a loading order based on an array of passed 
+    * @description | modules to load, testing for dependencies recursively and 
+    * @description | generating bundles of files to load
+    * @method      | setLoadingOrder
+    * @param       | {array}, module_list, List of modules to list
+    * @param       | {array}, bundle_list, Response being assembled
+    * @returns     | {array}, finished bundle_list
+    **/
+  // TODO: too complicated. Drop! If dependencies are not specified, works?
   function setLoadingOrder(module_list, bundle_list) {
     var len, dependency_list, i, base, name, current, next;
 
@@ -274,13 +283,13 @@ var declare, request;
 
 
   /**
-   * Associate shimmed subdepencies with the latest module triggering
-   * onload to try and have some logic for handling require calls made from
-   * a 3rd party shimmed plugin
-   * @method    solvePendingSubdependencies
-   * @param     {String}    my_name   Module triggering onload
-   * @returns   {Promise}   A promise
-   */
+    * @description | Associate shimmed subdepencies with the latest module 
+    * @description | triggering onload to try and have some logic for handling 
+    * @description | require calls made from a 3rd party shimmed plugin
+    * @method      | solvePendingSubdependencies
+    * @param       | {string}, my_name, Module triggering onload
+    * @returns     | {promise}, resolve with nothing
+    **/
   function solvePendingSubdependencies(my_name) {
     var i, len, trace, path, request_list, callback, origin, base, config;
 
@@ -318,13 +327,13 @@ var declare, request;
   }
 
   /**
-   * Declare a module from requestBundle = handle onload
-   * Thx: RenderJS - http://git.erp5.org/gitweb/renderjs.git/
-   * @method  declareModule
-   * @param   {String}  name  Module name
-   * @param   {String}  path  Module path
-   * @returns {Promise}
-   */
+    * @description | Declare a module from requestBundle = handle onload
+    * @thanks      | RenderJS - http://git.erp5.org/gitweb/renderjs.git/
+    * @method      | declareModule
+    * @param       | {string}, name, Module name
+    * @param       | {string}, path, Module path
+    * @returns     | {promise}, resolving with module
+    **/
   function declareModule(name, element) {
     var resolver;
 
@@ -351,12 +360,12 @@ var declare, request;
   }
 
   /**
-   * Request a bundle of files by tucking them onto the doc head and waiting
-   * for them to load and run (eg ["foo", "bar", "baz"])
-   * @method  requestBundle
-   * @param   {Array}   bundle  Bundle to load
-   * @returns {Promise} Promise (Loaded files)
-   */
+    * @description | Request a bundle of files by tucking them onto the doc head
+    * @description | and waiting for them to load and run (eg ["foo", "bar"])
+    * @method      | requestBundle
+    * @param       | {array}, bundle, Bundle to load
+    * @returns     | {promise}, Promise resolving with loaded files
+    **/
   function requestBundle(bundle) {
     var i, len, promise_list, mod, is_on_lib, batch, path, el, is_on_queue,
       is_on_window;
@@ -427,19 +436,18 @@ var declare, request;
   }
 
   /**
-   * "Declare" a module to the dependency_dict (clappjs "define")
-   *
-   * declare("[name]", [dependencies], function (dependencies) {
-   *   return something;
-   * });
-   *
-   * Thx: RSVP https://github.com/tildeio/rsvp.js
-   * Thx: requireJS http://requirejs.org
-   * @method  declare
-   * @param   {String} name             Module name
-   * @param   {Array}  dependency_list  List of dependencies
-   * @param   {Method} callback         Callback returning module
-   */
+    * @description | "Declare" a module to dependency_dict (require's define)
+    * @description | Note, that modules must be named!
+    * @description | declare("[name]", [dependencies], function (dependencies) {
+    * @description |  return something;
+    * @description | });
+    * @thanks      | RSVP https://github.com/tildeio/rsvp.js
+    * @thanks      | requireJS http://requirejs.org
+    * @method      | declare
+    * @param       | {string}, name, Module name
+    * @param       | {array}, dependency_list, List of dependencies
+    * @param       | {method}, callback, Callback returning module
+    **/
   declare = function (name, dependency_list, callback) {
     var resolver;
 
@@ -503,13 +511,12 @@ var declare, request;
   };
 
   /**
-   * "Request" a module for immideate use (clappjs "require")
-   *
-   *      request(["foo", "bar"]).spread(function(foo, bar) {});
-   *
-   * @method  request
-   * @param   {Array}   module_list List of modules to load
-   */
+    * @description | "Request" a module for immideate use (clappjs "require")
+    * @description | request(["foo", "bar"]).spread(function(foo, bar) {});
+    * @method      | request
+    * @param       | {array}, module_list, List of modules to load
+    * @returns     | {promise}, resolving with list of modules loaded
+    **/
   request = function (module_list) {
 
     // request built bundles
