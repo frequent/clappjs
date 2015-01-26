@@ -1,18 +1,20 @@
 /*jslint indent: 2, maxlen: 80, nomen: true, todo: true */
-/*global console, window, document, Promise, module, test, ok, declare,
- parse, Compressor, JS_Parse_Error, DefaultsError, Error, CSSOCompressor,
- CSSOTranslator */
-var declare, request;
-(function (Promise) {
+/*global console, Promise, module, test, ok, declare, parse, Compressor,
+JS_Parse_Error, DefaultsError, Error, CSSOCompressor, CSSOTranslator */
+(function () {
   "use strict";
 
   /* ====================================================================== */
-  /*                                BUILD                                   */
+  /*                              BUILD                                     */
+  /* ====================================================================== */
+
+  /* ====================================================================== */
+  /*                          Utility Functions                             */
   /* ====================================================================== */
 
   /**
    * =========================================================================
-   *          Utility to generate build version of files during test
+   *                          EXPOSED METHODS
    * =========================================================================
    */
 
@@ -36,12 +38,14 @@ var declare, request;
     var build = {};
 
     /**
-     * Load a list of urls via Ajax. Skip if the files are already available
-     * @method  promiseAjaxLoop
-     * @param   {Array}   my_url_list   Urls to load
-     * @param   {Array}   my_str_list   Response (in case already loaded)
-     * @return  {Promise} Array of file responses
-     */
+      * @description | Load a list of urls via Ajax. Skip if the files are 
+      * @description | already available
+      * @method      | promiseAjaxLoop
+      * @param       | {array},   my_url_list,   Urls to load
+      * @param       | {array},   my_str_list,   Response once loaded
+      * @return      | {promise}, resolving with list of files
+      **/
+    // TODO: make generic, also used in test and util?
     build.promiseAjaxLoop = function (my_url_list, my_str_list) {
       var i, len, file_list;
 
@@ -53,13 +57,14 @@ var declare, request;
     };
 
     /**
-     * Run a test method on a number of files
-     * @method runTests
-     * @param   {Array}     List of urls
-     * @param   {Array}     List of file strings
-     * @param   {Function}  Test method to run
-     * @returns {Array}     Array of uglified strings
-     */
+      * @description | Run a set of methods on a number of files
+      * @method      | run
+      * @param       | {array},   my_file_url_list,  List of urls
+      * @param       | {array},   my_file_str_list,  List of file strings
+      * @param       | {method},  my_test,           Test method to run
+      * @returns     | {array},   Array of uglifified strings
+      **/
+    // TODO: not generic
     build.run = function (my_file_url_list, my_file_str_list, my_test) {
       var i, len, return_array = [];
 
@@ -71,12 +76,12 @@ var declare, request;
     };
 
     /**
-     * Generate information on reduced file size
-     * @method  generateOutputInfo
-     * @param   {String}  my_data   Output
-     * @param   {String}  my_input  Input
-     * @returns {String}  info on reduced bytesize
-     */
+      * @description | Generate information on reduced file size
+      * @method      | generateOutputInfo
+      * @param       | {string},  my_data,   Output
+      * @param       | {string},  my_input,  Input
+      * @returns     | {string},  Info on reduced bytesize
+      **/
     build.generateOutputInfo = function (my_data, my_input) {
       var in_len, out_len;
 
@@ -88,12 +93,12 @@ var declare, request;
     };
 
     /**
-     * Generate generic error message
-     * @method  showUglyError
-     * @param   {String}  my_url   URL for file uglified
-     * @param   {Object}  my_err   Error object
-     * @returns {String}  error info for Qunit
-     */
+      * @description | Generate generic error message
+      * @method      | showUglyError
+      * @param       | {string},  my_url,   URL for file uglified
+      * @param       | {object},  my_err,   Error object
+      * @returns     | {string},  Error info for Qunit
+      **/
     build.showUglyError = function (my_url, my_err) {
       var message = my_url + ", Error:";
 
@@ -111,21 +116,14 @@ var declare, request;
       return message;
     };
 
-    // ============================ UGLIFYCSS ================================
-
     /**
-     * Done using
-     * Port of YUI CSS Compressor to NodeJS
-     * Author: Franck Marcia - https://github.com/fmarcia
-     * MIT licenced
-     */
-
-    /**
-     * run uglification on a CSS file
-     * @method  uglifycss
-     * @param   {Array}  code      List of file URLs to fetch and uglify
-     * @returns {String} single uglified string
-     */
+      * @description | Run uglification on a CSS file. Done using port of YUI
+      * @description | CSS Compressor to NodeJS
+      * @thanks      | Franck Marcia - https://github.com/fmarcia
+      * @method      | uglifycss
+      * @param       | {array},   code,    List of file URLs to fetch and uglify
+      * @returns     | {string}   Single uglified string
+      **/
     build.uglifycss = function (my_url_list, my_file_str_list) {
 
       // helper: run uglification
@@ -169,15 +167,10 @@ var declare, request;
         .then(uglifycssFiles);
     };
 
-    // ============================ UGLIFYJS =================================
-
-    /*
-     * Thx - wrapper created by Dan Wolff (danwolff.se)
-     * https://github.com/Skalman/UglifyJS-online
-     * Thx - UglifyJS is released under the BSD license, copyright Mihai Bazon.
-     * https://github.com/mishoo/UglifyJS2
-     */
-
+    /**
+      * @description | UglfiyJS default option object
+      * @property    | uglfiyjs_default_options
+      **/
     build.uglfiyjs_default_options = {
       "parse": {
         "strict": false
@@ -226,11 +219,13 @@ var declare, request;
     };
 
     /**
-     * run uglification on a JS file
-     * @method  uglifyjs
-     * @param   {String}  code      The code of the file to uglify
-     * @returns {String}  uglified code
-     */
+      * @description | Run uglification on a JS file.
+      * @thanks      | Dan Wolf,  https://github.com/Skalman/UglifyJS-online
+      * @thanks      | Mihai Bazon, https://github.com/mishoo/UglifyJS2
+      * @method      | uglifyjs
+      * @param       | {string},  code,      The code of the file to uglify
+      * @returns     | {string},  The uglified code
+      **/
     build.uglifyjs = function (my_url_list, my_file_str_list) {
 
       // helper: uglify file
@@ -299,20 +294,14 @@ var declare, request;
         .then(uglifyJSFiles);
     };
 
-    // ============================== CSSO ===================================
-
     /**
-    * Done using CSSO
-    * Author: Vladimir Grinenko - https://github.com/css/csso
-    * MIT licenced
-    */
-
-    /**
-    * run uglification on a JS file
-    * @method  csso
-    * @param   {String}  code      The code of the file to uglify
-    * @returns {String}  minified code
-    */
+      * @description | Run uglification on a JS file. Made using CSSO
+      * @thanks      | Vladimir Grinenko - https://github.com/css/csso
+      * @method      | csso
+      * @param       | {string},  code,      The code of the file to uglify
+      * @returns     | {string},  Minified code
+      **/
+    // TODO: do differently once all other things are working
     build.csso = function (my_url_list, my_file_str_list) {
 
       // helper: run CSSO over file string
