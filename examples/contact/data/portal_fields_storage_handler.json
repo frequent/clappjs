@@ -1,6 +1,6 @@
 [
   {
-    "portal_type": "portal_field",
+    "portal_type": "portal_fields",
     "reference_portal_type": "storage_handler",
     "dependent_portal_type_list": ["base_fields"],
     "dependent_reference_field": "field_type",
@@ -14,7 +14,7 @@
     "internal": true
   },
   {
-    "portal_type": "portal_field",
+    "portal_type": "portal_fields",
     "reference_portal_type": "storage_handler",
     "dependent_portal_type_list": ["base_fields"],
     "dependent_reference_field": "field_type",
@@ -28,7 +28,7 @@
     "internal": true
   },
   {
-    "portal_type": "portal_field",
+    "portal_type": "portal_fields",
     "reference_portal_type": "storage_handler",
     "dependent_portal_type_list": ["base_fields"],
     "dependent_reference_field": "field_type",
@@ -42,7 +42,7 @@
     "internal": true
   },
   {
-    "portal_type": "portal_field",
+    "portal_type": "portal_fields",
     "reference_portal_type": "storage_handler",
     "dependent_portal_type_list": ["base_fields"],
     "dependent_reference_field": "field_type",
@@ -56,7 +56,7 @@
     "internal": true
   },
   {
-    "portal_type": "portal_field",
+    "portal_type": "portal_fields",
     "reference_portal_type": "storage_handler",
     "dependent_portal_type_list": ["base_fields"],
     "dependent_reference_field": "field_type",
@@ -70,7 +70,7 @@
     "internal": true
   },
   {
-    "portal_type": "portal_field",
+    "portal_type": "portal_fields",
     "reference_portal_type": "storage_handler",
     "dependent_portal_type_list": ["base_fields"],
     "dependent_reference_field": "field_type",

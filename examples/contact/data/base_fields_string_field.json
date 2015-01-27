@@ -2,5 +2,9 @@
   "portal_type": "base_fields",
   "reference_portal_type": "string_field",
   "child_portal_type_list": null,
-  "dependent_portal_type_list": null
+  "dependent_portal_type_list": null,
+  "enabled": true,
+  "editable": true,
+  "required": true,
+  "internal": false
 }
