@@ -1,0 +1,7 @@
+{
+  "portal_type": "base_fields",
+  "reference_portal_type": "relationstring_field",
+  "dependent_portal_type_list": null,
+  "dependent_reference_field": null,
+  "child_portal_type_list": null
+}

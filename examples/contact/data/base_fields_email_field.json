@@ -1,10 +1,10 @@
 {
   "portal_type": "base_fields",
-  "reference_portal_type": "string_field",
+  "reference_portal_type": "email_field",
   "dependent_portal_type_list": null,
   "dependent_reference_field": null,
   "child_portal_type_list": null,
-  "field_name": "string_field",
+  "field_name": "email_field",
   "field_type": "string_field",
   "field_index": null,
   "i18n_title": "",
@@ -18,5 +18,5 @@
   "required": true,
   "internal": false,
   "maximum_characters": null,
-  "validation_rules_list": ["id-required", "id-too-long"]
+  "validation_rules_list": ["id-required", "id-too-long", "not-email"]
 }
